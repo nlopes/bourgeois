@@ -23,6 +23,7 @@ The hook runs after menu entries have been defined.
 It preserves one-shot selection for `boot_once=true`.
 For `recordfail=1`, it shows the technical menu with no timer.
 Slim uses nested `configfile`; Esc returns to the parent with no timeout.
+The hook reinitializes `gfxterm` and sets explicit text colors for the technical menu.
 Fancy sets the selected ID as `default` and sets `timeout=0`, then returns to GRUB's native menu executor.
 GRUB keeps responsibility for authentication and execution.
 A returned boot failure stays in the native menu and does not re-run the scene.
@@ -31,6 +32,7 @@ A returned boot failure stays in the native menu and does not re-run the scene.
 
 Slim uses stock `boot_menu`, `label`, `image`, and `circular_progress` facilities.
 Its sand image is static; the ring and seconds label reflect GRUB's live timer.
+GRUB paints the theme canvas in reverse declaration order, so the panel images follow the labels they back.
 Up/Down and Enter use GRUB's normal behavior.
 The letter shortcuts are the native lowercase `l` and `w` hotkeys.
 

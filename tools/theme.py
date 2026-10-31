@@ -35,11 +35,6 @@ title-text: ""
 desktop-image: "courtyard.png"
 desktop-image-scale-method: "stretch"
 terminal-font: "Unifont Regular 16"
-+ image { left = 32% top = 3% width = 36% height = 7% file = "panel.png" }
-+ image { left = 38% top = 77% width = 24% height = 13% file = "panel.png" }
-+ image { left = 8% top = 91% width = 84% height = 6% file = "panel.png" }
-+ image { left = 12% top = 28% width = 16% height = 5% file = "panel.png" }
-+ image { left = 72% top = 28% width = 16% height = 5% file = "panel.png" }
 + label { left = 25% top = 5% width = 50% height = 30 text = "CHOOSE YOUR KINGDOM" align = center color = "#f4dfb5" }
 + label { left = 12% top = 29% width = 16% height = 26 text = "LINUX  [L]" align = center color = "#f4dfb5" }
 + label { left = 72% top = 29% width = 16% height = 26 text = "WINDOWS  [W]" align = center color = "#f4dfb5" }
@@ -48,4 +43,10 @@ terminal-font: "Unifont Regular 16"
 + boot_menu { left = 40% top = 78% width = 20% height = 76 item_height = 30 item_spacing = 4 item_padding = 10 item_color = "#d4c7b2" selected_item_color = "#ffe1a1" selected_item_pixmap_style = "selected_*.png" item_font = "Unifont Regular 16" icon_width = 0 icon_height = 0 scrollbar = false }
 + label { left = 10% top = 92% width = 80% height = 24 text = "Up/Down: choose   Enter: boot   L/W: boot now   Esc: technical menu" align = center color = "#f4dfb5" }
 + label { left = 30% top = 13% width = 40% height = 24 text = "Default: Linux  |  Any key cancels auto-boot" align = center color = "#d4c7b2" }
+# Canvas paints the last declared components first.
++ image { left = 32% top = 3% width = 36% height = 7% file = "panel.png" }
++ image { left = 38% top = 77% width = 24% height = 13% file = "panel.png" }
++ image { left = 8% top = 91% width = 84% height = 6% file = "panel.png" }
++ image { left = 12% top = 28% width = 16% height = 5% file = "panel.png" }
++ image { left = 72% top = 28% width = 16% height = 5% file = "panel.png" }
 ''')

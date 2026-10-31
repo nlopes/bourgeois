@@ -36,8 +36,9 @@ def prepare(edition):
 cat <<'EOF'
 menuentry 'Windows routing fixture' --id bourgeois-windows-fixture {
   serial --unit=0 --speed=115200
-  terminal_output serial
+  terminal_output --append serial
   echo BOURGEOIS_WINDOWS_FIXTURE
+  terminal_output --remove serial
   terminal_output gfxterm
   sleep 3
 }

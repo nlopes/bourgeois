@@ -147,11 +147,17 @@ elif [ "${boot_once}" != "true" ]; then
   set timeout_style=menu
 '''
     finish = '''if [ "${timeout}" != "0" ]; then
+  unset theme
+  terminal_output console
   insmod all_video
   insmod gfxterm
   loadfont unicode
   set gfxmode=1280x720,1024x768,auto
   terminal_output gfxterm
+  set color_normal=white/black
+  set color_highlight=black/white
+  set menu_color_normal=white/black
+  set menu_color_highlight=black/white
 fi
 '''
     if edition == 'slim':

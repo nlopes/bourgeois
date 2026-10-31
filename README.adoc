@@ -1,0 +1,10 @@
+= A bourgeois grub
+
+I always loved point and click adventure games.
+Games where behind a door, behind an action, one could find a surprise.
+
+On the other hand, grub is boring, unadventurous.
+A simple but horrid thing.
+
+This aims to fix that.
+A bourgeois grub with a taste of adventure games.

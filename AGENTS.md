@@ -6,8 +6,12 @@ bourgeois explores a grub experience inspired by point-and-click adventure games
 
 - `README.adoc` describes the project’s motivation and direction.
 - `AGENTS.md` contains contributor guidance.
+- `docs/research/` contains feasibility research and design proposals.
+- `docs/research/mockups/` contains concept boards and their generation prompts.
 
-There are no source, test, or asset directories yet. Add directories when implementation requires them, and document their purpose here. Keep the README focused on the project and its setup.
+There are no executable source or test directories yet.
+Add implementation directories when needed, and document their purpose here.
+Keep the README focused on the project and its setup.
 
 ## Build, test, and development commands
 

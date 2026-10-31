@@ -1,0 +1,18 @@
+= Research and mockups
+
+bourgeois themes GRUB while retaining GRUB's existing OS boot logic.
+The research records what a stock theme can provide and what requires a native GRUB module.
+No bootloader implementation or installation has been tested yet.
+
+== Initial feasibility research
+
+The xref:grub-feasibility.adoc[GRUB feasibility assessment] covers theme limits, input handling, boot-entry handoff, recovery, and Secure Boot packaging.
+It includes the source references and proposed validation gates.
+
+image::mockups/adventure-concept.png[Initial adventure concept,width=1448]
+
+The xref:mockups/adventure-concept.png[initial mockup] shows the courtyard, both OS doors, contextual prompts, and the technical menu.
+The xref:mockups/adventure-concept.prompt.txt[exact generation prompt] is preserved alongside it.
+
+The mockup is concept art generated with the built-in image generation tool.
+It is not a screenshot of running GRUB or a production-ready asset set.

@@ -8,3 +8,8 @@ A simple but horrid thing.
 
 This aims to fix that.
 A bourgeois grub with a taste of adventure games.
+
+== Research
+
+The project is at the design stage.
+See xref:docs/research/README.adoc[the research and mockups] for the feasibility assessment, interface proposals, and source references.

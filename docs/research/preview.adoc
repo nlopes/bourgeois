@@ -1,0 +1,93 @@
+= Run and recover the development preview
+
+== Prerequisites
+
+Use Python 3.11 or newer, a C compiler, Make, QEMU, xorriso, and OpenSSH.
+Start with `make vm` and `python3 tools/lab.py wait`.
+The first native build also installs Ubuntu build dependencies and downloads the matching GRUB source inside the guest.
+It takes longer under x86 software emulation on an ARM Mac.
+
+== Editions
+
+[source,shell]
+----
+make slim
+python3 tools/lab.py reset
+----
+
+For fancy, boot Linux in the current preview so SSH is available, then run:
+
+[source,shell]
+----
+make native-build
+make fancy
+make vm-stop
+make vm
+----
+
+The tools register a separate `bourgeois preview` EFI entry inside the lab VM.
+`make fancy` puts it first in the guest boot order.
+`make slim` selects Ubuntu's original EFI entry.
+`reset` performs a cold VM restart with the selected guest boot order.
+
+== Controls
+
+[cols="1,2,2",options="header"]
+|===
+|Action |Slim |Fancy
+|Move or choose |Up/Down selects a menu row |Left/Right walks to a gate
+|Boot chosen OS |Enter |Space at a gate
+|Boot immediately |`l` / `w` |`l` / `w`, also uppercase
+|Technical menu |Esc |Esc
+|Timer |Any input cancels |Any input cancels
+|===
+
+Use `python3 tools/lab.py key left`, `key spc`, `key l`, or `key esc` to send QEMU keys.
+Capture the display with `make screenshot`.
+The lab is headless by default.
+
+== Recovery and removal
+
+Esc opens the full Ubuntu menu with no timer.
+Use `e` to edit an entry, `c` for the command line, or Advanced options for recovery kernels.
+If the native module or artwork is unavailable, the parent menu remains available.
+One-shot boots and Ubuntu's failed-boot path skip the scene.
+
+To remove the preview inside the lab guest:
+
+[source,shell]
+----
+python3 tools/lab.py ssh 'sudo rm -f /etc/grub.d/99_bourgeois /etc/grub.d/41_windows_fixture /etc/bourgeois.json; sudo update-grub'
+----
+
+Before removal, run `make slim` to select Ubuntu's original EFI entry.
+The separate `/boot/efi/EFI/bourgeois/grubx64.efi` file and its firmware entry can then be removed inside the guest.
+The files under `/boot/grub/bourgeois/` and `/usr/local/lib/bourgeois/` can be removed after the hook is gone.
+To discard the lab, stop the VM and remove `build/vm/`.
+The next start creates a fresh overlay and SSH key from the checked image cache.
+
+This repository provides a disposable development preview.
+Real-machine installation, signed EFI packaging, and actual Windows validation need a separate validation step.
+
+== Tests and packages
+
+[source,shell]
+----
+make test
+make boot-test
+make dist
+----
+
+`make boot-test` restarts the configured VM and sends real keyboard events.
+It tests cancellation, shortcuts, Esc tools, and automatic Linux boot.
+Fancy also tests walking and reversal.
+`python3 tools/boot_test.py fallbacks` checks fancy's asset, module, ID, and display-mode fallbacks.
+Inspect the captured editor, command-line, and fallback screenshots as part of review.
+Do not run two boot-test processes against the same VM.
+
+`make dist` creates slim and fancy preview archives and `SHA256SUMS` under `build/dist/`.
+`make native-build` caches the matching upstream source archives on the host.
+Packaging uses those cached files and does not need a running guest.
+The fancy archive includes the custom EFI file, the original module source, build scripts, and Ubuntu's corresponding GRUB source archives.
+The EFI file embeds the lab's filesystem UUID and must be rebuilt for a different disk.
+The archives contain source and development tooling; they are not real-machine installers.

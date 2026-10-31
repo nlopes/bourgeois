@@ -5,6 +5,9 @@ import argparse
 import lab
 from preview import upload, put_text
 
+SOURCE_ARCHIVES = ('grub2-unsigned_2.12.orig.tar.xz', 'grub2-unsigned_2.12-1ubuntu7.3.debian.tar.xz',
+                   'grub2-unsigned_2.12-1ubuntu7.3.dsc')
+
 SOURCE = '/home/bourgeois/grub-source/grub2-unsigned-2.12'
 
 
@@ -49,6 +52,11 @@ cd grub-core
 sh genmod.sh /home/bourgeois/native-modules/moddep.lst bourgeois.module build-grub-module-verifier /home/bourgeois/native-modules/bourgeois.mod
 ''', '755')
     lab.ssh('sh /home/bourgeois/build-native.sh > /tmp/bourgeois-native.log 2>&1')
+    cache = lab.BUILD / 'native' / 'upstream-source'
+    cache.mkdir(parents=True, exist_ok=True)
+    for name in SOURCE_ARCHIVES:
+        with (cache / name).open('wb') as stream:
+            lab.ssh(f'cat /home/bourgeois/grub-source/{name}', stdout=stream)
     print('Native GRUB build complete')
 
 

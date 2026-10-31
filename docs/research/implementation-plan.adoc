@@ -1,0 +1,46 @@
+= Approved implementation plan
+
+== Target and boundaries
+
+Build both editions for Ubuntu 24.04 LTS on x86_64 UEFI.
+Start with local QEMU software emulation on the ARM Mac.
+Use the same harness with KVM when a Linux x86_64 host becomes available.
+Linux is a real boot test; Windows uses an explicit test entry until real Windows validation is added.
+Secure Boot, legacy BIOS, other distributions, and real-machine installation are deferred.
+
+Keep the root MIT license for original project files outside the native module.
+License the GRUB-specific code in `fancy/` under GPLv3 or later.
+
+== Shared behavior
+
+Show exactly two OS choices: Linux and Windows.
+Boot Linux after 30 seconds without input.
+Any input cancels automatic boot for that visit.
+L/W boots the corresponding entry immediately.
+Esc opens the technical menu without a countdown.
+Keep Ubuntu's existing boot commands, entry authentication, one-shot boots, and recovery behavior.
+
+== Ordered milestones
+
+. Build the disposable VM harness, checksum verification, local SSH, QMP keyboard control, screenshots, and boot markers.
+. Generate the slim two-entry menu from Ubuntu's configuration, preserve its boot commands and helpers, and prove countdown, shortcuts, and nested-menu recovery.
+. Build a native module against the matching Ubuntu GRUB source, embed it in a separate EFI image, and prove input ownership, entry handoff, terminal restoration, and failure recovery using plain graphics.
+. Produce clean shared artwork and complete the slim theme with a static hourglass, native countdown ring, and live seconds label.
+. Add fancy walking, threshold-only Space interaction, reversal, contextual prompts, and animated sand driven by the same timer.
+. Complete regression tests, capture actual GRUB screenshots, and package reproducible development previews with recovery and removal instructions.
+
+Commit tested logical steps with Jujutsu.
+Keep generated images, keys, guest disks, build outputs, and recordings out of version control.
+
+== Acceptance criteria
+
+* Linux starts booting after an untouched 30-second countdown.
+* Input cancels the countdown; L/W routes the correct choice.
+* Fancy movement never boots; Space works only at the corresponding gate.
+* Esc restores the technical menu, entry editing, command line, and recovery entries.
+* Missing assets, modules, IDs, or graphics support leave a readable technical menu.
+* Returned boot failures do not restart the scene or create a retry loop.
+* Kernel updates refresh the Linux entry while preserving advanced kernels.
+* Slim leaves the distribution's GRUB binary unchanged.
+* Validate supported graphics modes and measure fancy rendering and memory use.
+* Record that Windows routing is a fixture and Secure Boot remains untested.

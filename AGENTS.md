@@ -2,20 +2,28 @@
 
 ## Project structure and module organization
 
-bourgeois explores a grub experience inspired by point-and-click adventure games. The project is at the concept stage.
+bourgeois themes GRUB with an interface inspired by point-and-click adventure games.
+Development targets Ubuntu 24.04 x86_64 UEFI in a disposable QEMU guest.
 
 - `README.adoc` describes the project’s motivation and direction.
 - `AGENTS.md` contains contributor guidance.
 - `docs/research/` contains feasibility research and design proposals.
 - `docs/research/mockups/` contains concept boards and their generation prompts.
+- `tools/` contains Python build and VM tooling, with tests beside the code.
+- `fancy/` contains the GPLv3+ native GRUB module and its license.
+- `build/` contains ignored guest disks, keys, caches, and evidence.
 
-There are no executable source or test directories yet.
 Add implementation directories when needed, and document their purpose here.
 Keep the README focused on the project and its setup.
 
 ## Build, test, and development commands
 
-No build system, dependency manifest, or development scripts are configured. There are currently no build, run, or test commands.
+Use Python 3.11 or newer, Make, QEMU, xorriso, and OpenSSH.
+See the README for setup and verified commands.
+
+- `make vm` starts the disposable Ubuntu guest.
+- `make screenshot` captures its display under `build/evidence/`.
+- `make test` runs the local tests.
 
 Useful inspection commands from the project root:
 
@@ -30,11 +38,13 @@ When adding executable code, document its prerequisites and exact build, run, an
 
 Preserve AsciiDoc in `README.adoc` and Markdown in this guide. Use short, direct sentences and descriptive headings. In AsciiDoc prose, follow the existing pattern of one sentence per line.
 
-No language-specific indentation rules, formatter, or linter exist yet. When introducing a language, use its standard formatter and document the command. Use descriptive names that reflect each file’s purpose.
+Use four spaces in Python and GRUB's GNU C style in the native module.
+Use descriptive names that reflect each file's purpose.
 
 ## Testing guidelines
 
-No test framework or coverage threshold is configured. For documentation changes, check spelling, markup, referenced paths, and command accuracy.
+Python tests use `unittest` and live beside the code as `*_test.py`.
+For documentation changes, check spelling, markup, referenced paths, and command accuracy.
 
 When adding behavior, include appropriate tests and a reproducible test command. Name tests after the behavior they verify, and add regression coverage for bug fixes.
 

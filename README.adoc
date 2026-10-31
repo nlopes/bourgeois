@@ -11,5 +11,36 @@ A bourgeois grub with a taste of adventure games.
 
 == Research
 
-The project is at the design stage.
 See xref:docs/research/README.adoc[the research and mockups] for the feasibility assessment, interface proposals, and source references.
+
+== Development lab
+
+The first target is Ubuntu 24.04 LTS on x86_64 UEFI.
+The lab uses a disposable QEMU disk; it does not change the host's boot configuration.
+Secure Boot and real Windows boot validation are deferred.
+
+Install Python 3.11 or newer, Make, QEMU, xorriso, and OpenSSH.
+On macOS, install the VM tools with `brew install qemu xorriso`.
+On Ubuntu, install `qemu-system-x86`, `qemu-utils`, `ovmf`, `xorriso`, and `openssh-client`.
+
+[source,shell]
+----
+make vm
+python3 tools/lab.py wait
+make ssh
+make screenshot
+make test
+----
+
+The first start downloads and checks the pinned Ubuntu image, creates an overlay disk, and configures a lab-only SSH key.
+SSH listens only on `127.0.0.1:2229`.
+Screenshots are saved under `build/evidence/`.
+Guest disks, keys, downloads, and test outputs stay under the ignored `build/` directory.
+Set `BOURGEOIS_SSH_PORT` to use another local SSH port.
+Set `BOURGEOIS_FIRMWARE` if QEMU's UEFI firmware cannot be found in the standard locations.
+
+== Licenses
+
+Original project files outside `fancy/` use the MIT license in `LICENSE`.
+The GRUB-specific code in `fancy/` uses GPLv3 or later; see `fancy/LICENSE`.
+Upstream GRUB and other redistributed dependencies retain their own notices.

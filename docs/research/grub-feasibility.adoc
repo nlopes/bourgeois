@@ -5,6 +5,10 @@
 Status: initial feasibility proposal, based on source inspection.
 No GRUB module, theme package, installer, or boot configuration has been implemented.
 
+The xref:two-editions.adoc[two-edition design] is the current direction.
+It supersedes this document's single-edition scope and indefinite wait with both editions and a 30-second automatic Linux boot.
+The technical assessment below is retained as the original research.
+
 == Mockup
 
 image::mockups/adventure-concept.png[Initial adventure concept,width=1448]

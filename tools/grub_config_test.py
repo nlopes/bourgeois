@@ -48,5 +48,5 @@ class ConfigurationTests(unittest.TestCase):
         for edition in ('slim', 'fancy'):
             result = hook(edition, 'linux-id', 'windows-id')
             self.assertIn('"${boot_once}" != "true"', result)
-            self.assertIn('"${recordfail}" != "1"', result)
+            self.assertIn('"${recordfail}" = "1"', result)
             self.assertIn('set timeout=-1', result)

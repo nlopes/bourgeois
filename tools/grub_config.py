@@ -125,6 +125,9 @@ insmod gfxterm
 insmod png
 loadfont unicode
 set gfxmode=1280x720,1024x768,auto
+serial --unit=0 --speed=115200
+terminal_output serial
+echo BOURGEOIS_SLIM_READY
 terminal_output gfxterm
 set theme={theme}
 export theme
@@ -136,16 +139,27 @@ def hook(edition, linux_id, windows_id):
     for identifier in (linux_id, windows_id):
         safe_id(identifier)
     common = '''# bourgeois: keep one-shot and failed-boot paths technical.
-if [ "${boot_once}" != "true" -a "${recordfail}" != "1" ]; then
+if [ "${recordfail}" = "1" ]; then
   set timeout=-1
   set timeout_style=menu
+elif [ "${boot_once}" != "true" ]; then
+  set timeout=-1
+  set timeout_style=menu
+'''
+    finish = '''if [ "${timeout}" != "0" ]; then
+  insmod all_video
+  insmod gfxterm
+  loadfont unicode
+  set gfxmode=1280x720,1024x768,auto
+  terminal_output gfxterm
+fi
 '''
     if edition == 'slim':
         return common + '''  if [ -f $prefix/bourgeois/scene.cfg -a -f $prefix/bourgeois/courtyard.png ]; then
     configfile $prefix/bourgeois/scene.cfg
   fi
 fi
-'''
+''' + finish
     if edition != 'fancy':
         raise ValueError('Unknown edition')
     return common + f'''  insmod all_video
@@ -156,4 +170,4 @@ fi
     bourgeois '{linux_id}' '{windows_id}' $prefix/bourgeois/courtyard.png $prefix/bourgeois/traveler.png
   fi
 fi
-'''
+''' + finish

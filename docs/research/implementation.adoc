@@ -20,7 +20,8 @@ Missing, duplicate, unsafe, and nested submenu IDs fail generation.
 
 The parent retains Ubuntu's advanced kernels, recovery entries, editor, and command line.
 The hook runs after menu entries have been defined.
-It skips the scene for `boot_once=true` and `recordfail=1`.
+It preserves one-shot selection for `boot_once=true`.
+For `recordfail=1`, it shows the technical menu with no timer.
 Slim uses nested `configfile`; Esc returns to the parent with no timeout.
 Fancy sets the selected ID as `default` and sets `timeout=0`, then returns to GRUB's native menu executor.
 GRUB keeps responsibility for authentication and execution.
@@ -43,10 +44,24 @@ Any key cancels automatic boot for that visit.
 The draining hourglass uses the same remaining-time value as automatic Linux selection.
 The native renderer scales the background and sprite strip using nearest-neighbor interpolation.
 It frees its bitmap allocations and restores the previous video mode before returning.
+It then initializes `gfxterm` so the technical menu remains visible after direct GOP rendering.
 
 == Lab boundary
 
 The tools install only into the disposable VM reached with the lab's SSH key.
 They do not change the Mac's boot files or EFI variables.
-The fancy preview uses a separate removable EFI image and leaves Ubuntu's EFI image intact.
+The fancy preview uses a separate EFI file on the lab VM's EFI partition and leaves Ubuntu's EFI image intact.
 This is a development preview, not a real-machine installer.
+
+== Native build
+
+The module is compiled against the matching Ubuntu GRUB source and generated headers.
+The preview combines that module with Ubuntu's existing module set using `grub-mkstandalone`.
+It embeds the native module in a separate EFI executable.
+No change to GRUB's core input or menu executor is required.
+The normal Ubuntu EFI executable remains the slim and recovery boot path.
+The module's explicit dependency list is scoped to the pinned Ubuntu build and checked by booting the resulting image.
+
+The update hook reads `/boot/grub/grub.cfg.new` after Ubuntu has emitted its normal entries.
+This temporary-file convention is specific to the supported Ubuntu `grub-mkconfig` version.
+Other distributions require validation before using the hook.

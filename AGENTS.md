@@ -19,12 +19,17 @@ Keep the README focused on the project and its setup.
 
 ## Build, test, and development commands
 
-Use Python 3.11 or newer, Make, QEMU, xorriso, and OpenSSH.
+Use Python 3.11 or newer, a C compiler, Make, QEMU, xorriso, and OpenSSH.
 See the README for setup and verified commands.
 
 - `make vm` starts the disposable Ubuntu guest.
 - `make screenshot` captures its display under `build/evidence/`.
-- `make test` runs the local tests.
+- `make test` runs the Python and C controller tests.
+- `make slim` installs the stock-binary theme in the guest.
+- `make native-build` builds the module against the matching Ubuntu source.
+- `make fancy` builds and selects the custom EFI preview in the guest.
+- `make boot-test` runs the keyboard and boot regression checks.
+- `make dist` packages previews with source and notices.
 
 Useful inspection commands from the project root:
 

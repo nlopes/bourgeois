@@ -8,7 +8,7 @@ import shutil
 import tarfile
 
 import lab
-from grub_config import generate, blocks, entry_id
+from grub_config import generate, hook, blocks, entry_id
 import theme
 
 STAGE = lab.BUILD / 'preview'
@@ -31,13 +31,14 @@ def upload(source, destination):
 def prepare(edition):
     lab.wait_ssh()
     # Regenerate the base before extraction. Never make the scene its own input.
-    lab.ssh('sudo rm -f /etc/grub.d/99_bourgeois; sudo update-grub', stdout=None)
+    lab.ssh('sudo rm -f /etc/grub.d/99_bourgeois')
     put_text('/tmp/41_windows_fixture', '''#!/bin/sh
 cat <<'EOF'
 menuentry 'Windows routing fixture' --id bourgeois-windows-fixture {
   serial --unit=0 --speed=115200
-  terminal_output console serial
+  terminal_output serial
   echo BOURGEOIS_WINDOWS_FIXTURE
+  terminal_output gfxterm
   sleep 3
 }
 EOF
@@ -53,6 +54,17 @@ EOF
     linux = candidates[0]
     windows = 'bourgeois-windows-fixture'
     (STAGE / 'scene.cfg').write_text(generate(source, linux, windows))
+    for name, modified in (
+        ('recordfail', 'set recordfail=1\n' + hook('fancy', linux, windows)),
+        ('one-shot', f'set boot_once=true\nset default={windows}\nset timeout=0\n' + hook('fancy', linux, windows)),
+        ('missing-asset', hook('fancy', linux, windows).replace('courtyard.png', 'missing.png')),
+        ('missing-module', hook('fancy', linux, windows).replace('insmod bourgeois;', 'insmod no_such_module;')),
+        ('missing-id', hook('fancy', 'missing-linux-id', windows)),
+        ('1024x768', hook('fancy', linux, windows).replace('  if insmod', '  set bourgeois_gfxmode=1024x768\n  if insmod')),
+        ('800x600', hook('fancy', linux, windows).replace('  if insmod', '  set bourgeois_gfxmode=800x600\n  if insmod')),
+        ('unsupported-mode', hook('fancy', linux, windows).replace('  if insmod', '  set bourgeois_gfxmode=640x480\n  if insmod')),
+    ):
+        (STAGE / f'test-{name}.cfg').write_text(source + modified)
     theme.build(STAGE)
     for asset in ('courtyard.png', 'traveler.png'):
         shutil.copyfile(lab.ROOT / 'assets' / asset, STAGE / asset)
@@ -68,6 +80,10 @@ EOF
     put_text('/tmp/99_bourgeois', '#!/bin/sh\nexec python3 /usr/local/lib/bourgeois/refresh.py\n', '755')
     lab.ssh('sudo mkdir -p /usr/local/lib/bourgeois && sudo cp /home/bourgeois/hook-library/* /usr/local/lib/bourgeois/ && sudo cp /tmp/bourgeois.json /etc/bourgeois.json && sudo cp /tmp/99_bourgeois /etc/grub.d/99_bourgeois && sudo update-grub && sudo grub-script-check /boot/grub/grub.cfg')
     (lab.BUILD / 'preview.json').write_text(json.dumps({'edition': edition, 'linux_id': linux, 'windows_id': windows}, indent=2) + '\n')
+    if edition == 'slim':
+        from native import select_boot
+        select_boot('slim')
+    lab.ssh('sync')
     print(f'{edition} preview ready. Reset the VM to enter GRUB.')
 
 

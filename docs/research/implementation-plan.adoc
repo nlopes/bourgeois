@@ -30,7 +30,7 @@ Keep Ubuntu's existing boot commands, entry authentication, one-shot boots, and 
 . Complete regression tests, capture actual GRUB screenshots, and package reproducible development previews with recovery and removal instructions.
 
 Commit tested logical steps with Jujutsu.
-Keep generated images, keys, guest disks, build outputs, and recordings out of version control.
+Keep generated EFI images, keys, guest disks, build outputs, and recordings out of version control.
 
 == Acceptance criteria
 

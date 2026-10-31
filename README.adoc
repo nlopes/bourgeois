@@ -19,7 +19,7 @@ The first target is Ubuntu 24.04 LTS on x86_64 UEFI.
 The lab uses a disposable QEMU disk; it does not change the host's boot configuration.
 Secure Boot and real Windows boot validation are deferred.
 
-Install Python 3.11 or newer, Make, QEMU, xorriso, and OpenSSH.
+Install Python 3.11 or newer, a C compiler, Make, QEMU, xorriso, and OpenSSH.
 On macOS, install the VM tools with `brew install qemu xorriso`.
 On Ubuntu, install `qemu-system-x86`, `qemu-utils`, `ovmf`, `xorriso`, and `openssh-client`.
 
@@ -38,6 +38,7 @@ Screenshots are saved under `build/evidence/`.
 Guest disks, keys, downloads, and test outputs stay under the ignored `build/` directory.
 Set `BOURGEOIS_SSH_PORT` to use another local SSH port.
 Set `BOURGEOIS_FIRMWARE` if QEMU's UEFI firmware cannot be found in the standard locations.
+Set `BOURGEOIS_FIRMWARE_VARS` for a matching variables template in a custom location.
 
 == Slim preview
 
@@ -60,6 +61,26 @@ The distribution's GRUB EFI binary stays unchanged.
 
 The installed VM hook refreshes the scene during each `update-grub`.
 See xref:docs/research/implementation.adoc[the implementation notes] for entry ownership and recovery behavior.
+
+== Fancy preview
+
+Boot Linux in the current VM, then build and select the custom EFI image:
+
+[source,shell]
+----
+make native-build
+make fancy
+python3 tools/lab.py reset
+----
+
+Left/Right walks to a gate; Space enters at the threshold.
+L/W boots immediately and Esc returns to Ubuntu's technical menu.
+The animated sand and live seconds share the 30-second Linux timer.
+The tools install a separate EFI file and boot entry inside the disposable guest.
+They keep Ubuntu's original EFI binary intact.
+
+See xref:docs/research/preview.adoc[the preview guide] for controls, recovery, removal, and packaging.
+See xref:docs/research/validation.adoc[the validation record] for checked behavior and limits.
 
 == Licenses
 

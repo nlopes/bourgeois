@@ -119,9 +119,10 @@ write_files:
     content: |
       [Unit]
       Description=bourgeois Linux boot marker
-      After=network.target
+      After=network.target grub-common.service
       [Service]
       Type=oneshot
+      ExecStartPre=/bin/sync
       ExecStart=/bin/sh -c 'echo BOURGEOIS_LINUX_OK > /dev/ttyS0'
       [Install]
       WantedBy=multi-user.target
@@ -145,9 +146,12 @@ def start():
     code = firmware()
     variables = VM / "uefi-vars.fd"
     if not variables.exists():
-        candidates = [code.parent / "edk2-i386-vars.fd", code.parent / "OVMF_VARS.fd",
-                      code.parent / "OVMF_VARS_4M.fd"]
-        template = next((path for path in candidates if path.is_file()), None)
+        matching = code.parent / code.name.replace("CODE", "VARS")
+        candidates = [matching, code.parent / "edk2-i386-vars.fd"]
+        explicit = os.environ.get("BOURGEOIS_FIRMWARE_VARS")
+        if explicit:
+            candidates.insert(0, Path(explicit))
+        template = next((path for path in candidates if path != code and path.is_file()), None)
         if template is None:
             raise RuntimeError("UEFI variables template not found beside firmware")
         shutil.copyfile(template, variables)
@@ -194,12 +198,28 @@ def wait_ssh(timeout=900):
 
 def reset():
     with QMP() as monitor:
-        monitor.command("system_reset")
+        monitor.command("quit")
+    time.sleep(0.5)
+    start()
 
 
 def send_key(name):
     with QMP() as monitor:
         monitor.command("send-key", {"keys": [{"type": "qcode", "data": name}], "hold-time": 80})
+
+
+def type_text(value):
+    punctuation = {" ": "spc", "-": "minus", "=": "equal", "/": "slash",
+                   ".": "dot", "\n": "ret", "_": "shift-minus", ":": "shift-semicolon",
+                   "(": "shift-9", ")": "shift-0", "$": "shift-4"}
+    with QMP() as monitor:
+        for char in value:
+            name = punctuation.get(char, char.lower())
+            if char.isupper():
+                name = "shift-" + name
+            monitor.command("send-key", {"keys": [{"type": "qcode", "data": part}
+                                                    for part in name.split("-")], "hold-time": 10})
+            time.sleep(0.06)
 
 
 def screenshot(path=None):

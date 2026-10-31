@@ -1,0 +1,52 @@
+= Implementation notes
+
+== Target
+
+The development preview targets Ubuntu 24.04 x86_64 UEFI.
+The lab uses Ubuntu cloud image `20261017` and GRUB `2.12-1ubuntu7.3`.
+Secure Boot and actual Windows boot validation remain deferred.
+The Windows entry prints `BOURGEOIS_WINDOWS_FIXTURE` and returns to the menu.
+It does not install or boot Windows.
+
+== Entry ownership
+
+The generator reads Ubuntu's current `grub.cfg` after `update-grub`.
+It keeps support commands and the selected entry bodies.
+It changes each selected title and hotkey while retaining its ID, classes, and authentication options.
+It removes other menu blocks from the nested slim scene.
+A `true` command replaces removed blocks so enclosing conditionals remain valid GRUB syntax.
+Missing, duplicate, unsafe, and nested submenu IDs fail generation.
+`grub-script-check` validates both the scene and the parent configuration before use.
+
+The parent retains Ubuntu's advanced kernels, recovery entries, editor, and command line.
+The hook runs after menu entries have been defined.
+It skips the scene for `boot_once=true` and `recordfail=1`.
+Slim uses nested `configfile`; Esc returns to the parent with no timeout.
+Fancy sets the selected ID as `default` and sets `timeout=0`, then returns to GRUB's native menu executor.
+GRUB keeps responsibility for authentication and execution.
+A returned boot failure stays in the native menu and does not re-run the scene.
+
+== Graphics and input
+
+Slim uses stock `boot_menu`, `label`, `image`, and `circular_progress` facilities.
+Its sand image is static; the ring and seconds label reflect GRUB's live timer.
+Up/Down and Enter use GRUB's normal behavior.
+The letter shortcuts are the native lowercase `l` and `w` hotkeys.
+
+Fancy owns a polling loop through GRUB's terminal input API.
+A Left or Right press selects a walking destination; the character completes the walk without requiring key release events.
+The opposite arrow reverses direction at the current position.
+The center-to-gate trip takes 1.2 seconds.
+Space commits only at a gate, and L/W commits immediately.
+Fancy accepts both lowercase and uppercase shortcuts.
+Any key cancels automatic boot for that visit.
+The draining hourglass uses the same remaining-time value as automatic Linux selection.
+The native renderer scales the background and sprite strip using nearest-neighbor interpolation.
+It frees its bitmap allocations and restores the previous video mode before returning.
+
+== Lab boundary
+
+The tools install only into the disposable VM reached with the lab's SSH key.
+They do not change the Mac's boot files or EFI variables.
+The fancy preview uses a separate removable EFI image and leaves Ubuntu's EFI image intact.
+This is a development preview, not a real-machine installer.

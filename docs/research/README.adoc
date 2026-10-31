@@ -2,7 +2,7 @@
 
 bourgeois themes GRUB while retaining GRUB's existing OS boot logic.
 The research records what a stock theme can provide and what requires a native GRUB module.
-No bootloader implementation or installation has been tested yet.
+See xref:implementation-plan.adoc[the approved implementation plan] and xref:implementation.adoc[the implementation notes] for the development preview.
 
 == Current direction: both editions
 
@@ -16,7 +16,8 @@ image::mockups/two-editions.png[Slim and fancy editions with a 30-second hourgla
 The xref:mockups/two-editions.png[comparison mockup] shows the native countdown ring for slim and animated sand for fancy.
 The xref:mockups/two-editions.prompt.txt[exact generation prompt] is preserved alongside it.
 
-The target distribution, GRUB build, boot mode, and Secure Boot requirements still need to be selected before implementation.
+The initial target is Ubuntu 24.04 x86_64 UEFI.
+Secure Boot is deferred.
 
 == Initial feasibility research
 

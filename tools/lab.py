@@ -192,6 +192,16 @@ def wait_ssh(timeout=900):
     raise TimeoutError(f"Guest SSH did not start; inspect {VM / 'serial.log'}")
 
 
+def reset():
+    with QMP() as monitor:
+        monitor.command("system_reset")
+
+
+def send_key(name):
+    with QMP() as monitor:
+        monitor.command("send-key", {"keys": [{"type": "qcode", "data": name}], "hold-time": 80})
+
+
 def screenshot(path=None):
     target = Path(path) if path else BUILD / "evidence" / "screen.png"
     target = target.resolve()
@@ -203,7 +213,7 @@ def screenshot(path=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["start", "stop", "ssh", "wait", "screenshot"])
+    parser.add_argument("command", choices=["start", "stop", "ssh", "wait", "screenshot", "reset", "key"])
     parser.add_argument("argument", nargs="?")
     args = parser.parse_args()
     if args.command == "start":
@@ -215,6 +225,12 @@ def main():
         wait_ssh()
     elif args.command == "ssh":
         ssh(args.argument)
+    elif args.command == "reset":
+        reset()
+    elif args.command == "key":
+        if not args.argument:
+            parser.error("key needs a QEMU qcode, such as left, spc, or esc")
+        send_key(args.argument)
     elif args.command == "screenshot":
         screenshot(args.argument)
 

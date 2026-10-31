@@ -1,0 +1,25 @@
+= Development validation
+
+== Environment
+
+* Host: ARM64 macOS, QEMU 11.1.3 with software emulation.
+* Guest: Ubuntu 24.04.5 LTS, x86_64 UEFI, Linux 6.8.0-147-generic.
+* Distribution GRUB: `2.12-1ubuntu7.3`.
+* Ubuntu image: `noble/20261017/noble-server-cloudimg-amd64.img`, with the SHA256 pinned in `tools/ubuntu-image.json`.
+* Ubuntu EFI binary SHA256 before preview testing: `a831af01e4fb5e3c9457120e1d08ea13d98a0a47b62728c284b7f502d535965c`.
+
+The tests use a real Linux boot and a Windows routing fixture.
+They do not validate Windows installation, Windows chainloading, Secure Boot, BIOS, other distributions, or hardware firmware.
+
+== Local checks
+
+`make test` runs the Python harness and generator tests plus the C controller tests.
+The controller tests inject time and key events.
+They check the 30-second boundary, cancellation, threshold-only Space, immediate shortcuts, movement, and reversal.
+The generator tests check retained boot commands and authentication, fresh kernel paths, and invalid IDs.
+The refresh tests check atomic replacement and failure preservation.
+
+== Runtime evidence
+
+Runtime results and actual GRUB screenshots are recorded after the boot tests.
+Concept boards in `mockups/` remain design references.

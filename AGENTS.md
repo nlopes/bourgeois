@@ -10,6 +10,7 @@ Development targets Ubuntu 24.04 x86_64 UEFI in a disposable QEMU guest.
 - `docs/research/` contains feasibility research and design proposals.
 - `docs/research/mockups/` contains concept boards and their generation prompts.
 - `tools/` contains Python build and VM tooling, with tests beside the code.
+- `assets/` contains shared PNG artwork and generation prompts.
 - `fancy/` contains the GPLv3+ native GRUB module and its license.
 - `build/` contains ignored guest disks, keys, caches, and evidence.
 

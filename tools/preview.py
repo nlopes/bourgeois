@@ -58,11 +58,11 @@ EOF
         ('recordfail', 'set recordfail=1\n' + hook('fancy', linux, windows)),
         ('one-shot', f'set boot_once=true\nset default={windows}\nset timeout=0\n' + hook('fancy', linux, windows)),
         ('missing-asset', hook('fancy', linux, windows).replace('courtyard.png', 'missing.png')),
-        ('missing-module', hook('fancy', linux, windows).replace('insmod bourgeois;', 'insmod no_such_module;')),
+        ('missing-module', 'set feature_bourgeois=0\n' + hook('fancy', linux, windows).replace('insmod bourgeois', 'insmod no_such_module')),
         ('missing-id', hook('fancy', 'missing-linux-id', windows)),
-        ('1024x768', hook('fancy', linux, windows).replace('  if insmod', '  set bourgeois_gfxmode=1024x768\n  if insmod')),
-        ('800x600', hook('fancy', linux, windows).replace('  if insmod', '  set bourgeois_gfxmode=800x600\n  if insmod')),
-        ('unsupported-mode', hook('fancy', linux, windows).replace('  if insmod', '  set bourgeois_gfxmode=640x480\n  if insmod')),
+        ('1024x768', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=1024x768\n  insmod bourgeois')),
+        ('800x600', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=800x600\n  insmod bourgeois')),
+        ('unsupported-mode', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=640x480\n  insmod bourgeois')),
     ):
         (STAGE / f'test-{name}.cfg').write_text(source + modified)
     theme.build(STAGE)

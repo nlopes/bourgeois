@@ -166,7 +166,8 @@ fi
   insmod png
   loadfont unicode
   set bourgeois_trace=1
-  if insmod bourgeois; then
+  insmod bourgeois
+  if [ "${{feature_bourgeois}}" = "1" ]; then
     bourgeois '{linux_id}' '{windows_id}' $prefix/bourgeois/courtyard.png $prefix/bourgeois/traveler.png
   fi
 fi

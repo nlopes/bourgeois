@@ -50,3 +50,8 @@ class ConfigurationTests(unittest.TestCase):
             self.assertIn('"${boot_once}" != "true"', result)
             self.assertIn('"${recordfail}" = "1"', result)
             self.assertIn('set timeout=-1', result)
+
+    def test_fancy_checks_module_capability_after_loading(self):
+        result = hook('fancy', 'linux-id', 'windows-id')
+        self.assertIn('if [ "${feature_bourgeois}" = "1" ]; then', result)
+        self.assertNotIn('if insmod', result)

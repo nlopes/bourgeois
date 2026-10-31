@@ -262,10 +262,13 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
 
 GRUB_MOD_INIT (bourgeois)
 {
+  grub_env_set ("feature_bourgeois", "1");
+  grub_env_export ("feature_bourgeois");
   command = grub_register_command ("bourgeois", run_scene, "LINUX_ID WINDOWS_ID BACKGROUND SPRITES",
                                    "Walk to an operating system gate.");
 }
 GRUB_MOD_FINI (bourgeois)
 {
+  grub_env_unset ("feature_bourgeois");
   grub_unregister_command (command);
 }

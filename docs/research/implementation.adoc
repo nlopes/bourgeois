@@ -65,3 +65,7 @@ The module's explicit dependency list is scoped to the pinned Ubuntu build and c
 The update hook reads `/boot/grub/grub.cfg.new` after Ubuntu has emitted its normal entries.
 This temporary-file convention is specific to the supported Ubuntu `grub-mkconfig` version.
 Other distributions require validation before using the hook.
+
+The module advertises `feature_bourgeois=1` when it loads and clears the flag when it unloads.
+The hook checks this flag before calling the scene.
+GRUB's `insmod` command returns zero even when a module cannot be loaded, so its return status cannot serve as that check.

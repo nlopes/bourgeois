@@ -19,6 +19,13 @@ The xref:mockups/two-editions.prompt.txt[exact generation prompt] is preserved a
 The initial target is Ubuntu 24.04 x86_64 UEFI.
 Secure Boot is deferred.
 
+== Development preview
+
+The xref:implementation-plan.adoc[approved plan] defines the initial target and acceptance checks.
+The xref:implementation.adoc[implementation notes] describe boot ownership and native rendering.
+The xref:preview.adoc[preview guide] covers setup, controls, tests, recovery, and packages.
+The xref:validation.adoc[validation record] lists the tested environment and remaining limits.
+
 == Initial feasibility research
 
 The xref:grub-feasibility.adoc[GRUB feasibility assessment] covers theme limits, input handling, boot-entry handoff, recovery, and Secure Boot packaging.

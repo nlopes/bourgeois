@@ -3,7 +3,7 @@
 `courtyard.png` is the original scene background.
 `traveler.png` is a four-frame transparent walking strip.
 Both were generated with the built-in imagegen tool for this project.
-The prompts are in the adjacent `.prompt.txt` files.
+The prompts are preserved in xref:courtyard.prompt.txt[courtyard.prompt.txt] and xref:traveler.prompt.txt[traveler.prompt.txt].
 The original PNGs are kept without post-processing.
 GRUB scales them at runtime.
 

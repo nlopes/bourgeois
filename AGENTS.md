@@ -35,6 +35,9 @@ See the README for setup and verified commands.
 - `make screenshot` captures its display under `build/evidence/`.
 - `make test` runs the Python and C controller tests.
 - `make slim` installs the stock-binary theme in the guest.
+- `make host-doctor` checks host dependencies and reports graphics adapters without changes.
+- `make host-gpus` reports adapters and recommends a firmware display adapter.
+- `make host-gpu-select` interactively selects an adapter for setup guidance.
 - `make host-stage` builds Slim artwork for the host's existing clean menu.
 - `make host-install` backs up and updates the existing host theme with sudo.
 - `make host-rollback` restores the last host theme backup and refreshes GRUB.

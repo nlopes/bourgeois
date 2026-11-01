@@ -13,6 +13,7 @@ import tempfile
 
 from grub_config import blocks, entry_id
 from host_theme import BACKGROUND_HOOK, STAGED_FILES
+from host_checks import require_tools
 
 THEME = 'boot/grub/themes/bourgeois'
 HOOK = 'etc/grub.d/06_bourgeois_background'
@@ -225,6 +226,7 @@ def main():
     if os.geteuid() != 0:
         parser.error('Run this command through make host-install or sudo')
     try:
+        require_tools('install')
         if args.command == 'install':
             backup = install(args.stage)
             print(f'Slim installed and both menus checked. Backup: {backup}')

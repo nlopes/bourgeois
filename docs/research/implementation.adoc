@@ -13,12 +13,10 @@ It does not install or boot Windows.
 The generator reads Ubuntu's current `grub.cfg` after `update-grub`.
 It keeps support commands and the selected entry bodies.
 It changes each selected title and hotkey while retaining its ID, classes, and authentication options.
-It removes other menu blocks from the nested slim configuration.
+It removes other menu blocks from the nested slim scene.
 A `true` command replaces removed blocks so enclosing conditionals remain valid GRUB syntax.
 Missing, duplicate, unsafe, and nested submenu IDs fail generation.
 `grub-script-check` validates both the scene and the parent configuration before use.
-One generated file contains both the selector and the two native boot entries in separate conditional branches.
-Kernel updates replace that file atomically.
 
 The parent retains Ubuntu's advanced kernels, recovery entries, editor, and command line.
 The hook runs after menu entries have been defined.
@@ -35,18 +33,15 @@ A returned boot failure stays in the native menu and does not re-run the scene.
 Both editions use `courtyard-nameplates.png`, which has raised masonry and recessed stone-framed nameplates based on the original concept.
 The OS names are part of that artwork; GRUB does not draw name labels over the gates.
 
-Slim uses stock `label`, `image`, and `circular_progress` facilities, with no visible menu list.
+Slim uses stock `boot_menu`, `label`, and `circular_progress` facilities.
 Its sand image is static; the ring and seconds label reflect GRUB's live timer.
-The title and controls have transparent backgrounds and dark text shadows.
+The title and countdown labels have dark text shadows.
+The two-row menu uses stock GRUB nine-slice pixmaps for a centered gold-trimmed panel, a gold selected row with dark text, and a dark outlined unselected row.
+The panel fits the longest title plus small text insets, row borders, and its decorative frame.
+Small generated gold ornaments and a dark footer follow the Slim concept mockup.
 GRUB paints the theme canvas in reverse declaration order, so shadow components follow the text they back.
-The lowercase `l` and `w` hotkeys execute unrestricted selection actions, which set the chosen OS ID and switch the theme path.
-They do not load a kernel or chainloader, or create another menu context.
-Each theme draws a static hero at its door and identifies the Space action.
-Space is a literal single-character hotkey on the enter action; Enter also executes this default action.
-That action loads the same generated file in boot mode, where GRUB executes the preserved OS entry with its original authentication.
-A returned boot attempt stays in that native boot menu until the user leaves it.
-Selecting a door cancels the timer through GRUB's normal input handling and never restarts it.
-The unused stock menu navigation keys remain native GRUB controls; only L/W and Space are advertised for this scene.
+Up/Down and Enter use GRUB's normal behavior.
+The letter shortcuts are the native lowercase `l` and `w` hotkeys.
 
 The optional `tools/host_theme.py` builder uses stock GRUB class icons for a static traveler at the selected door.
 A clipped one-row menu view scrolls to the selected entry's icon while the ordinary two-entry list stays visible.
@@ -54,12 +49,23 @@ A transparent full-screen list makes GRUB repaint nested menu coordinates correc
 The icon canvases must match the display resolution supplied to the builder.
 The existing host entries must have Ubuntu or GNU/Linux classes and a Windows class.
 This builder omits the lab's L/W shortcut hint because it does not modify those entries.
+It generates a scaled DejaVu Sans Mono PF2 font for the host menu and includes its font notices.
+Pillow measures the Linux and Windows titles at that font size to set the panel width.
+Ubuntu's theme header loads that font; the temporary preview loads it explicitly.
 Its separate `gfxterm` background hook keeps the courtyard behind boot messages; themes alone do not set that terminal background.
 The operating system can change the display after taking control.
 
 Slim preserves the distribution's `gfxmode` instead of forcing a low resolution.
 Fancy also inherits `gfxmode`, with `bourgeois_gfxmode` as an explicit override.
 The largest usable mode must be verified with `videoinfo` in the machine's actual GRUB session.
+Where the signed GRUB image omits that diagnostic, keep Secure Boot enabled and use a mode verified by a hardware trial.
+
+`tools/host_gpu.py` inspects display-class PCI devices, `boot_vga`, bound drivers, and DRM connector status through Linux sysfs.
+Optional `lspci` supplies human-readable model names; the inspection works with PCI IDs when it is absent.
+It recommends an adapter from boot/display evidence and reports unknown or ambiguous cases explicitly.
+The selection only prints monitor-cabling and UEFI setup guidance.
+It cannot change which firmware GOP adapter stock GRUB selects or prove that a Linux-advertised mode is available in GRUB.
+Both editions use the firmware's preboot graphics output.
 
 Fancy owns a polling loop through GRUB's terminal input API.
 A Left or Right press selects a walking destination; the character completes the walk without requiring key release events.

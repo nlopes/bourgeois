@@ -73,7 +73,8 @@ Native EFI installation, signed EFI packaging, and actual Windows validation in 
 == Host artwork for an existing menu
 
 The host tools are separate from the VM installers.
-They require Python 3.11 or newer, Pillow, Make, sudo, `update-grub`, and `grub-script-check`.
+They require Python 3.11 or newer, Pillow, Make, sudo, `grub-mkfont`, `update-grub`, `grub-script-check`, and DejaVu Sans Mono.
+On Ubuntu: `sudo apt install python3-pil make sudo grub2-common fonts-dejavu-mono`.
 The builder writes only to the chosen staging directory.
 The generated theme expects the existing two-entry Linux/Windows menu and its native classes.
 The current host uses `/boot/grub/clean-menu.cfg`; this is a local convention, not a standard Ubuntu file.
@@ -85,12 +86,17 @@ make host-stage
 make test
 ----
 
-`HOST_SIZE` defaults to `1280x720`; `HOST_STAGE` defaults to `build/host-theme-review`.
-The direct staging command is `python3 tools/host_theme.py build/host-theme-review --size 1280x720`.
+`HOST_SIZE` defaults to the host-verified `2560x1440`; `HOST_STAGE` defaults to `build/host-theme-review`.
+The direct staging command is `python3 tools/host_theme.py build/host-theme-review --size 2560x1440`.
 The builder records file checksums and display dimensions in `manifest.json`.
+The menu uses the Slim mockup's gold selected row, dark frame, and side ornaments.
+Its compact width follows the longest title rather than a fixed wide panel.
+The generated `menu.pf2` and UI geometry scale with display height; the font notices are included.
 Build for the actual GRUB resolution, because the transparent class icons use that pixel width.
 The stock two-entry menu stays usable if another mode is selected, but the hero positions will not match the doors.
-Check firmware modes with `set pager=1` and `videoinfo` at GRUB's command line.
+Where available, check firmware modes with `set pager=1` and `videoinfo` at GRUB's command line.
+The signed GRUB image on this host omits `videoinfo`, and Secure Boot refuses loading the external module.
+Keep Secure Boot enabled; hardware trials established that 2560x1440 works and the 3840x2160 trial does not.
 Linux monitor modes alone do not establish which modes the firmware exposes to GRUB.
 
 Install or reinstall the already-present host theme with:
@@ -100,7 +106,7 @@ Install or reinstall the already-present host theme with:
 make host-install
 ----
 
-This target builds as the current user and runs `tools/host_install.py install` with sudo.
+This target checks dependencies, builds as the current user, and runs `tools/host_install.py install` with sudo.
 The installer requires the existing Bourgeois theme and executable `99_clean_menu` generator.
 It rejects a conflicting lab menu hook, modified staging files, and clean-menu boot commands that differ from the full menu.
 It backs up the theme directory, its background hook, its own settings override, `grub.cfg`, and `clean-menu.cfg` under `/var/backups/bourgeois/slim-*`.
@@ -129,6 +135,39 @@ Rollback restores the theme, background hook, and installer-owned settings, then
 If regeneration fails, it restores the snapshot's generated menus and returns an error; check the failure before rebooting.
 Retain local keyboard access and recovery media; automatic recovery from a failed operating-system boot or power loss is not provided.
 Fancy remains a VM preview until its GRUB version, disk layout, and Secure Boot signing are adapted and validated for the host.
+
+[[host-gpus]]
+=== Inspect and choose a graphics adapter
+
+[source,shell]
+----
+make host-doctor
+make host-gpus
+make host-gpu-select
+make host-gpus GPU=integrated
+make host-gpus GPU=0000:01:00.0
+python3 tools/host_gpu.py --json
+----
+
+These commands inspect hardware and print guidance without sudo or changes to the system.
+`host-doctor` also checks the installation dependencies; `host-gpus` works independently of those build tools.
+The interactive chooser accepts a listed number or PCI address, with Enter choosing the recommendation when available.
+Use `GPU=discrete` or a PCI address to choose explicitly; ambiguous choices produce an error.
+Without a terminal, use the explicit `GPU` argument.
+If `lspci` is missing, the report explains how to install `pciutils` and continues using kernel PCI IDs.
+Neither `nvidia-smi` nor a vendor control utility is required.
+Missing sysfs access, missing drivers, unavailable connector information, and missing build tools have specific messages.
+
+The current host has Intel UHD Graphics 770 and NVIDIA RTX 4060 Ti.
+NVIDIA is recommended from its boot VGA flag and connected DP-3 output.
+The Intel outputs currently report no connected monitor.
+GPU type is inferred only where model or topology evidence supports it; other devices are marked unknown.
+
+Choosing an adapter shows how to connect the monitor and select a primary display in UEFI setup, where supported.
+Stock GRUB receives graphics from firmware; the tool cannot switch that adapter or enable a disabled GPU.
+A firmware-disabled adapter may not appear in Linux's PCI inventory.
+This applies to both Slim and Fancy.
+Keep the known working 2560x1440 setting on this host; Linux connector mode lists do not certify a GRUB resolution.
 
 == Tests and packages
 

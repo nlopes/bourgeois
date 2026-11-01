@@ -1,21 +1,26 @@
 """Stage Slim artwork for an existing two-entry menu; never install host files.
 
-Requires Pillow. Build for the resolution actually used by GRUB, for example:
-    python3 tools/host_theme.py build/host-theme-review --size 1280x720
+Requires Pillow, grub-mkfont, and DejaVu Sans Mono. For example:
+    python3 tools/host_theme.py build/host-theme-review --size 2560x1440
 """
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 
 import theme
+from host_checks import FONT, HostSetupError, require_tools
 
 ROOT = Path(__file__).resolve().parent.parent
 STAGED_FILES = (
     'theme.txt', 'preview.cfg', '06_bourgeois_background',
     'courtyard-nameplates.png', 'hourglass.png', 'tick.png',
-    'selected_w.png', 'selected_c.png', 'shadow_w.png', 'shadow_c.png',
+    'ornament.png', 'menu-ornament.png', 'footer.png', 'menu.pf2', 'menu-font-license.txt',
+    *theme.MENU_ASSETS,
     'icons/ubuntu.png', 'icons/gnu-linux.png', 'icons/linux.png', 'icons/windows.png',
 )
 
@@ -31,15 +36,27 @@ EOF
 '''
 
 
-def stage(target, width=1280, height=720):
+def stage(target, width=2560, height=1440):
     if not (800 <= width <= 7680 and 600 <= height <= 4320):
         raise ValueError('Choose a GRUB resolution between 800x600 and 7680x4320')
-    from PIL import Image, ImageOps
+    require_tools('stage')
+    from PIL import Image, ImageFont, ImageOps
 
     target = Path(target)
+    target.mkdir(parents=True, exist_ok=True)
+    scale = max(1, height // 720)
+    font = target / 'menu.pf2'
+    subprocess.run(['grub-mkfont', '--name=Bourgeois UI', f'--size={20 * scale}',
+                    '--range=0x20-0x7e', f'--output={font}', str(FONT)], check=True,
+                   capture_output=True)
+    menu_font = f'Bourgeois UI Regular {20 * scale}'
+    metrics = ImageFont.truetype(str(FONT), 20 * scale)
+    menu_text_width = math.ceil(max(metrics.getlength(title) for title in ('Linux', 'Windows')))
     # The text lists share these class icons. A 1-pixel size avoids GRUB trying
     # to scale a found icon to zero dimensions; transparent padding hides it.
-    theme.build(target, icon_size=1, hotkeys=False)
+    theme.build(target, icon_size=1, hotkeys=False, scale=scale, menu_font=menu_font,
+                menu_text_width=menu_text_width)
+    shutil.copyfile(ROOT / 'assets/DejaVu-font-license.txt', target / 'menu-font-license.txt')
     shutil.copyfile(ROOT / 'assets/courtyard-nameplates.png',
                     target / 'courtyard-nameplates.png')
     icons = target / 'icons'
@@ -60,16 +77,8 @@ def stage(target, width=1280, height=720):
             for name in classes:
                 canvas.save(icons / f'{name}.png')
 
-    # GRUB invalidates nested-list bounds as screen coordinates. A transparent
-    # full-screen list makes it repaint the courtyard and the nested hero view
-    # on every selection change, erasing the old hero as it draws the new one.
+    # The shared full-screen list also invalidates this nested hero view.
     views = f'''
-+ boot_menu {{ left = 0 top = 0 width = 100% height = 100%
-  item_height = 1 item_spacing = 0 item_padding = 0
-  icon_width = 1 icon_height = 1 item_icon_space = 0
-  item_color = "#00000000" selected_item_color = "#00000000"
-  scrollbar = false scrollbar_left_pad = 0 scrollbar_right_pad = 0
-}}
 # The clipped one-row view scrolls to the selected entry's class icon.
 + canvas {{ left = 0 top = 73%-{hero_height} width = 100% height = {hero_height}
   + boot_menu {{ left = 0 top = 0 width = 100% height = 100%
@@ -87,6 +96,7 @@ def stage(target, width=1280, height=720):
 set gfxmode={width}x{height}
 terminal_output console
 terminal_output gfxterm
+loadfont $prefix/themes/bourgeois/menu.pf2
 insmod gfxterm_background
 background_image --mode=stretch $prefix/themes/bourgeois/courtyard-nameplates.png
 set theme=$prefix/themes/bourgeois/theme.txt
@@ -110,7 +120,11 @@ def resolution(value):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
-    parser.add_argument('--size', type=resolution, default=(1280, 720))
+    parser.add_argument('--size', type=resolution, default=(2560, 1440))
     args = parser.parse_args()
-    stage(args.output, *args.size)
+    try:
+        stage(args.output, *args.size)
+    except (HostSetupError, ValueError, OSError, subprocess.CalledProcessError) as error:
+        print(f'bourgeois: {error}', file=sys.stderr)
+        sys.exit(1)
     print(f'Staged {args.size[0]}x{args.size[1]} artwork in {args.output}; host boot files unchanged.')

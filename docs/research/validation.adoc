@@ -32,9 +32,6 @@ The slim keyboard suite also passed an untouched 30-second Linux boot, L and W r
 Its technical menu, entry editor, command line, and returned Windows fixture were captured and visually inspected.
 The full slim suite passed again after switching to the shared nameplate artwork.
 It also passed after removing the title, menu, and control backing panels.
-After replacing the menu with static door selection, all six slim cases passed again.
-They covered cancellation, repeated L/W selection without booting, single-Esc recovery after switching, the editor and command line, Space activation of both OS choices, and the untouched Linux timer.
-The Windows fixture returned to a readable native two-entry boot menu.
 
 image::mockups/fancy-runtime.png[Fancy GRUB at 15 seconds remaining,width=1280]
 
@@ -42,9 +39,7 @@ image::mockups/fancy-windows-gate.png[The traveler at the Windows gate with the 
 
 image::mockups/slim-runtime.png[Stock Ubuntu GRUB with the courtyard and native countdown,width=1280]
 
-image::mockups/slim-windows-selected.png[Stock Ubuntu GRUB with the hero at the Windows door,width=1280]
-
-image::mockups/slim-linux-selected.png[Stock Ubuntu GRUB after switching the hero back to the Linux door,width=1280]
+image::mockups/slim-windows-selected.png[Stock Ubuntu GRUB with Windows selected and transparent menu rows,width=1280]
 
 image::mockups/technical-menu.png[Ubuntu's technical menu after Esc,width=800]
 
@@ -54,9 +49,8 @@ Both editions show recessed architectural nameplates from `courtyard-nameplates.
 Fancy also has a freestanding hourglass.
 The stone surrounds and lettering are part of the background artwork, following the original concept.
 Fancy's title and help text use dark outlines, with the courtyard visible behind them.
-Slim's title, countdown label, and controls use text shadows with transparent backgrounds.
-Its visible menu was replaced by two static hero positions and a contextual Space prompt.
-Both door states were visually inspected in the unchanged Ubuntu GRUB binary.
+The earlier Slim capture used text shadows and transparent backgrounds for its title, menu, countdown label, and controls.
+Both selected rows were visually inspected, including the gold pointer at Windows.
 The live countdown was inspected at 30 and 15 seconds, with no backing panels.
 After replacing the font labels with architectural artwork, the untouched timer, walking, reversal, Space at the Windows gate, Esc menu, and command line were checked again.
 The missing-background check returned to a readable technical menu.
@@ -97,14 +91,30 @@ The terminal background retained the courtyard during both dummy handoffs, with 
 These rendering checks do not replace real OS boot validation.
 The user separately reported successful Linux and Windows boots with the preceding host artwork installation.
 The monitor advertises 3840x2160 in Linux; the host firmware's GRUB mode list has not yet been confirmed.
+The user later reported that the 3840x2160 trial did not work and 2560x1440 worked, including the selected-door hero.
+The installed signed GRUB image omits `videoinfo`; Secure Boot refused loading that diagnostic's external module.
+The host default is now the verified 2560x1440, with Secure Boot still enabled.
+The bottom menu now follows the Slim concept's gold-trimmed panel, amber selection bar, outlined unselected row, and gold ornaments.
+An isolated 2560x1440 GRUB 2.14 check covered the compact panel with Linux selection, Windows selection, and Linux reselection.
+The complete panel is 242x148 pixels, down from 1040x216, and follows the measured longest title rather than a fixed width.
+The selected fill is 178 pixels wide for the roughly 169-pixel Windows title.
+It spans x=1191 through x=1368 in both states: center x=1279.5 against screen center x=1280.
+The hero follows each selection without leaving its previous pose behind.
+Both the host 1280x720 theme and the base theme with the distribution font were also checked with both selections.
+The preceding countdown and courtyard handoff checks remain applicable; those components are unchanged by the compact layout.
 The Fancy resolution-inheritance change has not yet been rebuilt or boot-tested as a native EFI image.
 Host-installer tests use temporary filesystem roots and simulated GRUB commands.
 They check complete backup restoration after generation and syntax-check failures, staging checksum rejection, symlink rejection, and kernel refresh on rollback.
 They do not run the privileged installer against the live host.
+`make test` passes 49 Python tests and the C controller tests.
+The menu regression checks keep its width within 1.5 times the longest title at both host font sizes and keep its anchor centered.
+GPU tests cover both controller types, connector routing, ambiguous recommendations, explicit selection, missing sysfs, and optional `lspci` failure.
+Dependency tests cover missing packages and keep build-only requirements out of rollback.
+`make host-doctor`, explicit Intel guidance, JSON output, and interactive recommendation selection were checked on the host without changing its boot files.
 
-image::mockups/slim-host-linux-selected.png[Stock GRUB host artwork with the traveler at the selected Linux door,width=1280]
+image::mockups/slim-host-linux-selected.png[Stock GRUB at 2560x1440 with the gold Linux row and the traveler at the Linux door,width=1280]
 
-image::mockups/slim-host-windows-selected.png[Stock GRUB host artwork with the traveler at the selected Windows door,width=1280]
+image::mockups/slim-host-windows-selected.png[Stock GRUB at 2560x1440 with the gold Windows row and the traveler at the Windows door,width=1280]
 
 image::mockups/slim-host-handoff.png[Courtyard retained behind a dummy Windows handoff message,width=1280]
 
@@ -122,4 +132,4 @@ Repeated packaging with the same inputs produced identical SHA256 checksums.
 Archive metadata uses fixed timestamps and owner IDs.
 Both archives include the generated theme, project source, and license notices.
 The fancy archive also includes the EFI image and matching Ubuntu GRUB source archives.
-The extracted slim archive passed all 20 Python tests and the standalone C controller checks.
+The extracted slim archive passed all 18 Python tests and the standalone C controller checks.

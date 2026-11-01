@@ -61,14 +61,31 @@ The hourglass image is static in slim; its surrounding ring and seconds label co
 The distribution's GRUB EFI binary stays unchanged.
 The boot handoff and command line use a full-screen terminal instead of a centered box over the scene.
 The host artwork variant shows a static traveler at the selected door; Fancy adds walking.
+Slim's bottom menu follows the concept mockup: a centered dark panel with gold trim, an amber selected row, and an outlined unselected row.
 
 The installed VM hook refreshes the scene during each `update-grub`.
 See xref:docs/research/implementation.adoc[the implementation notes] for entry ownership and recovery behavior.
 
 === Artwork for an existing host menu
 
-The host tools require Python 3.11 or newer, Pillow, Make, sudo, `update-grub`, and `grub-script-check`.
+The host tools require Python 3.11 or newer, Pillow, Make, sudo, `grub-mkfont`, `update-grub`, `grub-script-check`, and DejaVu Sans Mono.
+On Ubuntu, install `python3-pil`, `make`, `sudo`, `grub2-common`, and `fonts-dejavu-mono`.
 They update this machine's existing two-entry Linux/Windows clean menu.
+Check the dependencies and inspect the graphics adapters without changing the system:
+
+[source,shell]
+----
+make host-doctor
+make host-gpu-select
+----
+
+The GPU chooser shows setup guidance for the selected adapter.
+The current host has Intel UHD Graphics 770 and NVIDIA RTX 4060 Ti; NVIDIA is recommended because it is the boot VGA device and has the connected monitor.
+Firmware and monitor routing determine which adapter GRUB uses.
+The chooser does not change firmware settings or Linux drivers.
+`lspci` is optional; install `pciutils` for model names, or the report uses kernel PCI IDs.
+See xref:docs/research/preview.adoc#host-gpus[GPU inspection] for explicit choices and limits.
+
 Build and test the artwork without installing it:
 
 [source,shell]
@@ -85,11 +102,13 @@ make host-install
 ----
 
 This builds as your user, asks for sudo for installation, saves a backup under `/var/backups/bourgeois/`, and regenerates and checks both menus.
+Dependency checks run before sudo and report missing packages.
 It restores the previous files if installation or validation fails.
 It writes only the artwork, a background hook, its own theme/resolution override, and the generated menus.
 It does not install an EFI image or change firmware boot entries.
-The default mode is the tested 1280x720.
-Set `HOST_SIZE=3840x2160` only after confirming that mode with `videoinfo` in the machine's GRUB session.
+The default mode is the host-verified 2560x1440.
+Set `HOST_SIZE=1280x720` to use the earlier verified mode.
+The 3840x2160 trial did not work on this host, and its signed GRUB image does not include `videoinfo`.
 The hero artwork must be built for the mode actually used.
 
 Restore the last backup with:
@@ -129,3 +148,4 @@ See xref:docs/research/validation.adoc[the validation record] for checked behavi
 Original project files outside `fancy/` use the MIT license in `LICENSE`.
 The GRUB-specific code in `fancy/` uses GPLv3 or later; see `fancy/LICENSE`.
 Upstream GRUB and other redistributed dependencies retain their own notices.
+The generated host menu font includes the notice in `assets/DejaVu-font-license.txt`.

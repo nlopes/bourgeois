@@ -48,6 +48,19 @@ A returned boot attempt stays in that native boot menu until the user leaves it.
 Selecting a door cancels the timer through GRUB's normal input handling and never restarts it.
 The unused stock menu navigation keys remain native GRUB controls; only L/W and Space are advertised for this scene.
 
+The optional `tools/host_theme.py` builder uses stock GRUB class icons for a static traveler at the selected door.
+A clipped one-row menu view scrolls to the selected entry's icon while the ordinary two-entry list stays visible.
+A transparent full-screen list makes GRUB repaint nested menu coordinates correctly when the selection changes.
+The icon canvases must match the display resolution supplied to the builder.
+The existing host entries must have Ubuntu or GNU/Linux classes and a Windows class.
+This builder omits the lab's L/W shortcut hint because it does not modify those entries.
+Its separate `gfxterm` background hook keeps the courtyard behind boot messages; themes alone do not set that terminal background.
+The operating system can change the display after taking control.
+
+Slim preserves the distribution's `gfxmode` instead of forcing a low resolution.
+Fancy also inherits `gfxmode`, with `bourgeois_gfxmode` as an explicit override.
+The largest usable mode must be verified with `videoinfo` in the machine's actual GRUB session.
+
 Fancy owns a polling loop through GRUB's terminal input API.
 A Left or Right press selects a walking destination; the character completes the walk without requiring key release events.
 The opposite arrow reverses direction at the current position.

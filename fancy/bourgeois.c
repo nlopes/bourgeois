@@ -185,13 +185,15 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
   int active = 0, frame_width, frame_height;
   unsigned frames = 0, render_total = 0, render_max = 0;
   const char *mode = grub_env_get ("bourgeois_gfxmode");
+  if (!mode || !*mode)
+    mode = grub_env_get ("gfxmode");
   if (argc != 4 || !has_entry (args[0]) || !has_entry (args[1])
       || grub_strcmp (args[0], args[1]) == 0)
     return grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: expected two unique entry IDs and two assets");
   font = grub_font_get ("Unifont Regular 16");
   if (!font)
     return grub_error (GRUB_ERR_BAD_FONT, "bourgeois: load a font first");
-  err = grub_video_set_mode (mode ? mode : "1280x720,1024x768,auto",
+  err = grub_video_set_mode (mode && *mode ? mode : "auto",
                             GRUB_VIDEO_MODE_TYPE_PURE_TEXT, 0);
   if (err)
     return err;

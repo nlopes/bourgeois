@@ -8,6 +8,8 @@ The prompts are preserved in xref:courtyard.prompt.txt[courtyard.prompt.txt], xr
 The nameplate background uses the original courtyard as the edit target and the xref:../docs/research/mockups/adventure-concept.png[original concept] as its stonework reference.
 The generated backgrounds and walking strip are kept without post-processing.
 GRUB scales them at runtime.
+The optional host theme builder extracts the first traveler cell and places it in transparent class icons at the two door positions.
+It mirrors the Linux pose and leaves these original PNGs unchanged.
 
 `traveler-idle-left.png` and `traveler-idle-right.png` are 64 by 102 pixel stills for slim.
 They use the first frame of `traveler.png`, resized and mirrored for the two doors.

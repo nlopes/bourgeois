@@ -12,7 +12,7 @@ def png(path, width, height, pixel):
                            + chunk(b'IDAT', zlib.compress(data)) + chunk(b'IEND', b''))
 
 
-def build(target):
+def build(target, *, icon_size=0, hotkeys=True):
     target = Path(target)
     target.mkdir(parents=True, exist_ok=True)
     gold = (232, 185, 103, 255)
@@ -28,6 +28,17 @@ def build(target):
         return (0, 0, 0, 0)
     png(target / 'hourglass.png', 48, 64, glass)
     png(target / 'tick.png', 3, 3, lambda x, y: gold)
+    transparent = (0, 0, 0, 0)
+    def pointer(x, y):
+        if 3 <= x <= 10 and abs(y - 14) <= 10 - x:
+            return gold
+        if 2 <= x <= 11 and abs(y - 14) <= 12 - x:
+            return (24, 19, 22, 255)
+        return transparent
+    png(target / 'selected_w.png', 14, 30, pointer)
+    png(target / 'selected_c.png', 1, 1, lambda x, y: transparent)
+    png(target / 'shadow_w.png', 14, 30, lambda x, y: transparent)
+    png(target / 'shadow_c.png', 1, 1, lambda x, y: transparent)
 
     def label(left, top, width, height, text, color, identifier=None):
         attributes = f'id = "{identifier}" ' if identifier else ''
@@ -40,25 +51,38 @@ def build(target):
             for dx, dy, ink in [(0, 0, color), (-1, -1, '#181316'),
                                 (-1, 1, '#181316'), (1, -1, '#181316'), (1, 1, '#181316')])
 
+    def menu(offset, color, selected_color, pixmaps):
+        return (f'+ boot_menu {{ left = 40%+{offset} top = 78%+{offset} width = 20% height = 76 '
+                f'item_height = 30 item_spacing = 4 item_padding = 10 item_color = "{color}" '
+                f'selected_item_color = "{selected_color}" selected_item_pixmap_style = "{pixmaps}_*.png" '
+                f'item_font = "Unifont Regular 16" icon_width = {icon_size} icon_height = {icon_size} scrollbar = false }}\n')
+
     output = '''# bourgeois slim: all interaction belongs to stock GRUB.
 title-text: ""
 desktop-image: "courtyard-nameplates.png"
 desktop-image-scale-method: "stretch"
 terminal-font: "Unifont Regular 16"
+# GRUB clears this terminal before executing a menu entry. Use the whole display
+# so the handoff does not leave a black rectangle over the courtyard.
+terminal-left: "0"
+terminal-top: "0"
+terminal-width: "100%"
+terminal-height: "100%"
+terminal-border: "0"
 '''
     output += label('25%', '5%', '50%', 30, 'CHOOSE YOUR KINGDOM', '#f4dfb5')
     output += '''
 + circular_progress { id = "__timeout__" left = 88% top = 5% width = 76 height = 90 center_bitmap = "hourglass.png" tick_bitmap = "tick.png" num_ticks = 30 ticks_disappear = true start_angle = -90 }
 '''
     output += label('86%', '19%', '10%', 24, None, '#f4dfb5', '__timeout__')
+    # Both lists show the same native menu; the rear list supplies text shadow.
+    output += menu(0, '#f4dfb5', '#ffe1a1', 'selected')
+    output += menu(1, '#181316', '#181316', 'shadow')
+    controls = 'Up/Down: choose   Enter: boot   '
+    if hotkeys:
+        controls += 'L/W: boot now   '
     output += label('10%', '92%', '80%', 24,
-                    'L/W: choose a door   Space: enter   Esc: technical menu', '#f4dfb5')
+                    controls + 'Esc: technical menu', '#f4dfb5')
     output += label('30%', '13%', '40%', 24,
                     'Default: Linux  |  Any key cancels auto-boot', '#d4c7b2')
-    for door, position, facing in [('linux', '19%-26', 'left'), ('windows', '81%-29', 'right')]:
-        scene = output + label('25%', '80%', '50%', 24, f'Space: Enter {door.title()}', '#ffe1a1')
-        scene += (f'+ image {{ left = {position} top = 73%-102 width = 64 height = 102 '
-                  f'file = "traveler-idle-{facing}.png" }}\n')
-        (target / f'theme-{door}.txt').write_text(scene)
-        if door == 'linux':
-            (target / 'theme.txt').write_text(scene)
+    (target / 'theme.txt').write_text(output)

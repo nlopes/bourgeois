@@ -29,33 +29,17 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("'Linux' --users alice $menuentry_id_option 'linux-id' --hotkey=l", result)
         self.assertIn('function helper', result)
         self.assertNotIn("'Recovery'", result)
-        boot_entries = [b for b in blocks(result) if b.kind == 'menuentry'
-                        and '--id=bourgeois-' not in b.header]
-        self.assertEqual(len(boot_entries), 2)
-
-    def test_door_selection_does_not_load_an_os(self):
-        result = generate(SOURCE, 'linux-id', 'windows-id')
-        for door, identifier in [('linux', 'linux-id'), ('windows', 'windows-id')]:
-            selector = next(b for b in blocks(result) if f'--id=bourgeois-select-{door}' in b.header)
-            body = result[selector.opening:selector.end]
-            self.assertIn(f"set bourgeois_selected='{identifier}'", body)
-            self.assertIn(f'theme-{door}.txt', body)
-            self.assertNotIn('configfile', body)
-            self.assertNotIn('linux /', body)
-            self.assertNotIn('chainloader', body)
-
-    def test_space_handoff_uses_native_entries_and_selected_id(self):
-        result = generate(SOURCE, 'linux-id', 'windows-id')
-        self.assertIn('--hotkey=\' \' --id=bourgeois-enter-door', result)
-        self.assertIn('set default=$bourgeois_selected', result)
-        self.assertIn('"${bourgeois_selected}" = \'linux-id\' -o "${bourgeois_selected}" = \'windows-id\'', result)
-        self.assertIn('set default=bourgeois-enter-door\nset timeout_style=menu\nset timeout=30', result)
-        self.assertIn('export bourgeois_selected', result)
-        self.assertIn('set bourgeois_enter=false', result)
+        self.assertEqual(len([b for b in blocks(result) if b.kind == 'menuentry']), 2)
 
     def test_kernel_update_is_taken_from_current_config(self):
         result = generate(SOURCE.replace('/vmlinuz', '/vmlinuz-new'), 'linux-id', 'windows-id')
         self.assertIn('linux /vmlinuz-new', result)
+
+    def test_scene_does_not_override_the_distribution_display_mode(self):
+        result = generate('set gfxmode=3840x2160,1920x1080,auto\n' + SOURCE,
+                          'linux-id', 'windows-id')
+        self.assertIn('set gfxmode=3840x2160,1920x1080,auto', result)
+        self.assertNotIn('set gfxmode=1280x720', result)
 
     def test_missing_duplicate_or_unsafe_ids_fail_closed(self):
         for source, linux in [(SOURCE, 'missing'), (SOURCE + SOURCE, 'linux-id'), (SOURCE, "bad'; halt")]:

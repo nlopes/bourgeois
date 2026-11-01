@@ -91,7 +91,7 @@ def safe_id(value):
 
 
 def generate(source, linux_id, windows_id, theme='$prefix/bourgeois/theme.txt'):
-    """Build the door selector and a native boot menu from the same source."""
+    """Preserve support commands; remove menus and append the chosen entries."""
     ids = [safe_id(linux_id), safe_id(windows_id)]
     if ids[0] == ids[1]:
         raise ValueError('Linux and Windows must have different entry IDs')
@@ -109,47 +109,14 @@ def generate(source, linux_id, windows_id, theme='$prefix/bourgeois/theme.txt'):
     support = source
     for block in reversed(outer):
         support = support[:block.start] + '\ntrue\n' + support[block.end:]
-    output = [support, '\n# bourgeois: preserve native execution and authentication.\n',
-              'if [ "${bourgeois_enter}" = "true" ]; then\n']
+    output = [support, '\n# bourgeois: native two-entry scene\n']
     for name, key, identifier, block in zip(('Linux', 'Windows'), ('l', 'w'), ids, chosen):
         # Replace only the title and hotkey. Keep authentication, classes, IDs, and body.
         header = re.sub(r"^menuentry\s+(?:'[^']*'|\"[^\"]*\"|\S+)",
                         f"menuentry '{name}'", block.header, count=1)
         header = re.sub(r'\s+--hotkey(?:=\S+|\s+\S+)', '', header)
         output.append(f'{header} --hotkey={key} ' + source[block.opening:block.end] + '\n')
-    output.append(f'''unset theme
-terminal_output console
-insmod all_video
-insmod gfxterm
-loadfont unicode
-set gfxmode=1280x720,1024x768,auto
-terminal_output gfxterm
-set color_normal=white/black
-set color_highlight=black/white
-set menu_color_normal=white/black
-set menu_color_highlight=black/white
-set timeout=-1
-if [ "${{bourgeois_selected}}" = '{ids[0]}' -o "${{bourgeois_selected}}" = '{ids[1]}' ]; then
-  set default=$bourgeois_selected
-  set timeout=0
-fi
-else
-menuentry 'Enter the selected door' --unrestricted --hotkey=' ' --id=bourgeois-enter-door {{
-  set bourgeois_enter=true
-  export bourgeois_enter
-  configfile $prefix/bourgeois/scene.cfg
-  set bourgeois_enter=false
-}}
-''')
-    for door, key, identifier in zip(('linux', 'windows'), ('l', 'w'), ids):
-        output.append(f'''menuentry 'Select {door.title()}' --unrestricted --hotkey={key} --id=bourgeois-select-{door} {{
-  set bourgeois_selected='{identifier}'
-  set theme={theme.removesuffix('.txt')}-{door}.txt
-}}
-''')
-    output.append(f'''set bourgeois_selected='{ids[0]}'
-export bourgeois_selected
-set default=bourgeois-enter-door
+    output.append(f'''set default='{ids[0]}'
 set timeout_style=menu
 set timeout=30
 set fallback=
@@ -157,14 +124,15 @@ insmod all_video
 insmod gfxterm
 insmod png
 loadfont unicode
-set gfxmode=1280x720,1024x768,auto
+if [ -z "${{gfxmode}}" ]; then
+  set gfxmode=auto
+fi
 serial --unit=0 --speed=115200
 terminal_output serial
 echo BOURGEOIS_SLIM_READY
 terminal_output gfxterm
 set theme={theme}
 export theme
-fi
 ''')
     return ''.join(output)
 
@@ -186,7 +154,9 @@ elif [ "${boot_once}" != "true" ]; then
   insmod all_video
   insmod gfxterm
   loadfont unicode
-  set gfxmode=1280x720,1024x768,auto
+  if [ -z "${gfxmode}" ]; then
+    set gfxmode=auto
+  fi
   terminal_output gfxterm
   set color_normal=white/black
   set color_highlight=black/white
@@ -195,7 +165,7 @@ elif [ "${boot_once}" != "true" ]; then
 fi
 '''
     if edition == 'slim':
-        return common + '''  if [ -f $prefix/bourgeois/scene.cfg -a -f $prefix/bourgeois/courtyard-nameplates.png -a -f $prefix/bourgeois/theme.txt -a -f $prefix/bourgeois/theme-linux.txt -a -f $prefix/bourgeois/theme-windows.txt -a -f $prefix/bourgeois/traveler-idle-left.png -a -f $prefix/bourgeois/traveler-idle-right.png ]; then
+        return common + '''  if [ -f $prefix/bourgeois/scene.cfg -a -f $prefix/bourgeois/courtyard-nameplates.png ]; then
     configfile $prefix/bourgeois/scene.cfg
   fi
 fi

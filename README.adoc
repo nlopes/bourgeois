@@ -9,14 +9,9 @@ A simple but horrid thing.
 This aims to fix that.
 A bourgeois grub with a taste of adventure games.
 
-bourgeois themes GRUB while preserving its existing OS boot logic and recovery paths.
-Slim uses the unchanged distribution binary and a hero that snaps between doors.
-Fancy adds a native GRUB module for walking and animated sand.
-
 == Research
 
 See xref:docs/research/README.adoc[the research and mockups] for the feasibility assessment, interface proposals, and source references.
-The current xref:docs/research/mockups/slim-runtime.png[slim capture] and xref:docs/research/mockups/fancy-runtime.png[fancy capture] show running GRUB in QEMU.
 
 == Development lab
 
@@ -33,11 +28,11 @@ On Ubuntu, install `qemu-system-x86`, `qemu-utils`, `ovmf`, `xorriso`, and `open
 ----
 make vm
 python3 tools/lab.py wait
+make ssh
 make screenshot
 make test
 ----
 
-Use `make ssh` to inspect the running guest; exit the SSH session before continuing with host commands.
 The first start downloads and checks the pinned Ubuntu image, creates an overlay disk, and configures a lab-only SSH key.
 SSH listens only on `127.0.0.1:2229`.
 Screenshots are saved under `build/evidence/`.
@@ -48,33 +43,47 @@ Set `BOURGEOIS_FIRMWARE_VARS` for a matching variables template in a custom loca
 
 == Slim preview
 
-Prepare the two-door scene inside the running guest:
+Prepare the two-entry menu inside the running guest:
 
 [source,shell]
 ----
-make slim
+python3 tools/preview.py slim
 python3 tools/lab.py reset
+python3 tools/lab.py key esc
 ----
 
 Wait for the scene before sending keys.
-`l` and `w` place the hero at the Linux or Windows door.
-Space enters the selected door; Enter also works.
-The hero snaps between the doors without a walking animation.
-Esc returns to Ubuntu's technical menu.
+Up/Down selects an entry and Enter boots it.
+`l` and `w` boot immediately; Esc returns to Ubuntu's technical menu.
 Any input cancels the 30-second automatic Linux boot.
 The Windows choice is a routing fixture that prints a marker and returns.
 The hourglass image is static in slim; its surrounding ring and seconds label count down.
 The distribution's GRUB EFI binary stays unchanged.
-For the headless lab, send keys with commands such as `python3 tools/lab.py key w` and `python3 tools/lab.py key spc`.
+The boot handoff and command line use a full-screen terminal instead of a centered box over the scene.
+The host artwork variant shows a static traveler at the selected door; Fancy adds walking.
 
 The installed VM hook refreshes the scene during each `update-grub`.
 See xref:docs/research/implementation.adoc[the implementation notes] for entry ownership and recovery behavior.
 
+=== Artwork for an existing host menu
+
+The host staging tool requires Python 3.11 or newer and Pillow.
+It builds artwork for an existing two-entry Linux/Windows menu without installing files or changing firmware.
+Build for the resolution actually used by GRUB:
+
+[source,shell]
+----
+python3 tools/host_theme.py build/host-theme-review --size 1280x720
+make test
+----
+
+The static traveler switches doors when the native selection changes.
+The supplied background hook keeps the courtyard visible behind GRUB's boot messages.
+See xref:docs/research/preview.adoc#host-artwork[host artwork installation and rollback] before copying the output to the host.
+
 == Fancy preview
 
-In slim, select Linux with `l`, then press Space.
-In fancy, `l` boots Linux immediately.
-Once Linux is running, build and select the custom EFI image:
+Boot Linux in the current VM, then build and select the custom EFI image:
 
 [source,shell]
 ----
@@ -91,15 +100,6 @@ They keep Ubuntu's original EFI binary intact.
 
 See xref:docs/research/preview.adoc[the preview guide] for controls, recovery, removal, and packaging.
 See xref:docs/research/validation.adoc[the validation record] for checked behavior and limits.
-
-== Checks and packages
-
-`make test` runs the Python and C checks without a VM.
-After installing an edition in the running guest, `make boot-test` checks its input, boot, countdown, and recovery behavior.
-Run only one boot-test process against the VM at a time, and inspect the runtime captures under `build/evidence/`.
-After `make native-build` and `make fancy`, `make dist` packages both previews and checksums under `build/dist/`.
-Packaging uses the cached EFI image and matching GRUB source archives and does not require a running guest.
-These are development previews for the disposable lab, not real-machine installers.
 
 == Licenses
 

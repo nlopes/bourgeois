@@ -89,7 +89,7 @@ def run(edition, case):
         lab.ssh('sudo systemctl start grub-common.service && sync')
         print(f'PASS {edition}: untouched timer booted Linux')
     elif case == 'cancel':
-        lab.send_key('spc' if edition == 'fancy' else 'x')
+        lab.send_key('spc')
         time.sleep(32)
         assert 'BOURGEOIS_LINUX_OK' not in read(serial)[serial_offset:]
         assert read(log)[offset:].count(f'BOURGEOIS_{"SCENE" if edition == "fancy" else "SLIM"}_READY') == 1
@@ -97,31 +97,9 @@ def run(edition, case):
             assert 'BOURGEOIS_SELECT_' not in read(log)[offset:]
             assert 'BOURGEOIS_TIMER_CANCELLED' in read(log)[offset:]
         capture(f'{edition}-cancelled')
-        print(f'PASS {edition}: input cancelled timer without booting')
-    elif case == 'selection':
-        assert edition == 'slim'
-        lab.send_key('w')
-        time.sleep(32)
-        assert 'Linux version' not in read(serial)[serial_offset:]
-        assert 'BOURGEOIS_WINDOWS_FIXTURE' not in read(serial)[serial_offset:]
-        capture('slim-windows-selected')
-        for key in ('l', 'w', 'l', 'l'):
-            lab.send_key(key)
-            time.sleep(5)
-        capture('slim-linux-selected')
-        assert 'Linux version' not in read(serial)[serial_offset:]
-        assert 'BOURGEOIS_WINDOWS_FIXTURE' not in read(serial)[serial_offset:]
-        lab.send_key('esc')
-        time.sleep(1)
-        capture('slim-selection-technical')
-        print('CAPTURED slim: repeated door switching, cancelled timer, and single-Esc recovery (inspect images)')
+        print(f'PASS {edition}: Space cancelled timer without booting')
     elif case == 'windows':
         lab.send_key('w')
-        if edition == 'slim':
-            time.sleep(5)
-            assert 'BOURGEOIS_WINDOWS_FIXTURE' not in read(serial)[serial_offset:]
-            assert 'Linux version' not in read(serial)[serial_offset:]
-            lab.send_key('spc')
         wait_for(serial, 'BOURGEOIS_WINDOWS_FIXTURE', serial_offset)
         time.sleep(5)
         assert 'BOURGEOIS_LINUX_OK' not in read(serial)[serial_offset:]
@@ -134,17 +112,13 @@ def run(edition, case):
         expected_ready = f'BOURGEOIS_{"SCENE" if edition == "fancy" else "SLIM"}_READY'
         assert read(log)[offset:].count(expected_ready) == 1
         capture(f'{edition}-returned-entry')
-        print(f'PASS {edition}: Windows activation routed fixture and did not restart scene')
+        print(f'PASS {edition}: W routed Windows fixture and did not restart scene')
     elif case == 'linux':
         lab.send_key('l')
-        if edition == 'slim':
-            time.sleep(5)
-            assert 'Linux version' not in read(serial)[serial_offset:]
-            lab.send_key('spc')
         wait_for(serial, 'BOURGEOIS_LINUX_OK', serial_offset, 180)
         lab.wait_ssh()
         lab.ssh('sudo systemctl start grub-common.service && sync')
-        print(f'PASS {edition}: Linux activation booted Linux')
+        print(f'PASS {edition}: L booted Linux')
     elif case == 'technical':
         lab.send_key('esc')
         time.sleep(1)
@@ -211,7 +185,7 @@ def run(edition, case):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('case', choices=['all', 'timeout', 'cancel', 'selection', 'windows', 'linux', 'technical', 'walking', 'fallbacks'])
+    parser.add_argument('case', choices=['all', 'timeout', 'cancel', 'windows', 'linux', 'technical', 'walking', 'fallbacks'])
     args = parser.parse_args()
     lock = (lab.VM / 'boot-test.lock').open('w')
     try:
@@ -220,6 +194,6 @@ if __name__ == '__main__':
         parser.error('Another boot test is using this VM')
     edition = json.loads((lab.BUILD / 'preview.json').read_text())['edition']
     cases = (['cancel', 'walking', 'technical', 'windows', 'linux', 'timeout'] if edition == 'fancy'
-             else ['cancel', 'selection', 'technical', 'windows', 'linux', 'timeout']) if args.case == 'all' else [args.case]
+             else ['cancel', 'technical', 'windows', 'linux', 'timeout']) if args.case == 'all' else [args.case]
     for case in cases:
         run(edition, case)

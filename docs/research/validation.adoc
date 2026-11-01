@@ -90,6 +90,21 @@ This is not a measurement of total GRUB heap use.
 
 == Validation limits
 
+An additional stock GRUB 2.14 UEFI rendering check on the Linux host reproduced the centered black handoff rectangle.
+The optional host theme was checked at 1280x720 with dummy Linux and Windows entries in an isolated QEMU instance with no network or host disks attached.
+The static traveler appeared at the selected gate and switched sides on Up/Down.
+The terminal background retained the courtyard during both dummy handoffs, with diagnostic text still visible.
+These rendering checks do not replace real OS boot validation.
+The user separately reported successful Linux and Windows boots with the preceding host artwork installation.
+The monitor advertises 3840x2160 in Linux; the host firmware's GRUB mode list has not yet been confirmed.
+The Fancy resolution-inheritance change has not yet been rebuilt or boot-tested as a native EFI image.
+
+image::mockups/slim-host-linux-selected.png[Stock GRUB host artwork with the traveler at the selected Linux door,width=1280]
+
+image::mockups/slim-host-windows-selected.png[Stock GRUB host artwork with the traveler at the selected Windows door,width=1280]
+
+image::mockups/slim-host-handoff.png[Courtyard retained behind a dummy Windows handoff message,width=1280]
+
 The fallback tests use alternate GRUB configurations in the same disposable guest.
 The missing-module fixture clears the capability flag and requests a nonexistent module.
 The failed-boot and one-shot fixtures inject those state variables before the hook.

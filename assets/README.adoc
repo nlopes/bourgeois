@@ -1,16 +1,19 @@
 = Shared artwork
 
 `courtyard.png` is the original scene background.
+`fancy-courtyard.png` adds raised masonry and recessed stone-framed nameplates for fancy.
 `traveler.png` is a four-frame transparent walking strip.
-Both were generated with the built-in imagegen tool for this project.
-The prompts are preserved in xref:courtyard.prompt.txt[courtyard.prompt.txt] and xref:traveler.prompt.txt[traveler.prompt.txt].
-The original PNGs are kept without post-processing.
+These images were generated with the built-in imagegen tool for this project.
+The prompts are preserved in xref:courtyard.prompt.txt[courtyard.prompt.txt], xref:fancy-courtyard.prompt.txt[fancy-courtyard.prompt.txt], and xref:traveler.prompt.txt[traveler.prompt.txt].
+The fancy background uses the original courtyard as the edit target and the xref:../docs/research/mockups/adventure-concept.png[original concept] as its stonework reference.
+The PNGs are kept without post-processing.
 GRUB scales them at runtime.
 
-The courtyard is 1672 by 941 pixels.
+Both courtyard backgrounds are 1672 by 941 pixels.
 The traveler strip is 1983 by 793 pixels with four equal logical cells.
 The door centers are at source pixels 326 and 1358, about 19.5% and 81.2% of the image width.
-Fancy uses these centers for both its inscriptions and walking destinations.
+Fancy uses these centers for its walking destinations.
+Its OS names are part of the background artwork, inside the masonry.
 The walking baseline is at 73% of the display height.
 
 These project assets use the root MIT license.

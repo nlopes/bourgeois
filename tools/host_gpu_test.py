@@ -43,12 +43,12 @@ class HostGPUTests(unittest.TestCase):
         (connector / 'modes').write_text(modes)
 
     def inventory(self):
-        intel = self.device('0000:00:02.0', '0x8086', '0x4680', '0x038000', driver='i915')
-        nvidia = self.device('0000:01:00.0', '0x10de', '0x2803', boot=True, driver='nvidia')
+        intel = self.device('0001:00:02.0', '0x8086', '0x1111', '0x038000', driver='i915')
+        nvidia = self.device('0001:03:00.0', '0x10de', '0x2222', boot=True, driver='nvidia')
         self.connector(intel, 'card1', 'HDMI-A-1', 'disconnected')
-        self.connector(nvidia, 'card2', 'DP-3', 'connected', '3840x2160\n2560x1440\n2560x1440\nbad\n')
-        return host_gpu.discover(self.sysfs, names={intel.name: 'Intel UHD Graphics 770',
-                                                   nvidia.name: 'NVIDIA GeForce RTX 4060 Ti'})
+        self.connector(nvidia, 'card2', 'DP-1', 'connected', '1920x1080\n2560x1440\n2560x1440\nbad\n')
+        return host_gpu.discover(self.sysfs, names={intel.name: 'Intel UHD Graphics (fixture)',
+                                                   nvidia.name: 'NVIDIA GeForce RTX (fixture)'})
 
     def test_both_controllers_and_monitor_routing_are_detected(self):
         gpus, notes = self.inventory()
@@ -56,16 +56,16 @@ class HostGPUTests(unittest.TestCase):
         self.assertEqual([gpu['driver'] for gpu in gpus], ['i915', 'nvidia'])
         self.assertIsNone(gpus[0]['boot_vga'])
         self.assertTrue(gpus[1]['boot_vga'])
-        self.assertEqual(gpus[1]['connectors'], [{'name': 'DP-3', 'status': 'connected',
-                                                'linux_modes': ['3840x2160', '2560x1440']}])
+        self.assertEqual(gpus[1]['connectors'], [{'name': 'DP-1', 'status': 'connected',
+                                                'linux_modes': ['1920x1080', '2560x1440']}])
         self.assertEqual(notes, [])
 
     def test_recommendation_uses_boot_and_connected_output_evidence(self):
         gpus, _ = self.inventory()
         selected, reason = host_gpu.recommend(gpus)
-        self.assertEqual(selected['pci'], '0000:01:00.0')
+        self.assertEqual(selected['pci'], '0001:03:00.0')
         self.assertIn('firmware boot VGA', reason)
-        self.assertIn('DP-3', reason)
+        self.assertIn('DP-1', reason)
         self.assertIn('current UEFI', host_gpu.guidance(selected))
 
     def test_select_integrated_gives_firmware_guidance_without_writes(self):
@@ -98,11 +98,11 @@ class HostGPUTests(unittest.TestCase):
     def test_vendor_alone_does_not_classify_integrated_or_discrete(self):
         for vendor in ('1002', '10de', '8086'):
             self.assertIn('unknown', host_gpu.kind('0000:05:00.0', vendor, 'unknown GPU'))
-        self.assertIn('likely integrated', host_gpu.kind('0000:00:02.0', '8086', 'Intel [8086:4680]'))
+        self.assertIn('likely integrated', host_gpu.kind('0001:00:02.0', '8086', 'Intel [8086:4680]'))
         self.assertIn('unknown', host_gpu.kind('0000:05:00.0', '8086', 'Intel Iris Xe MAX'))
 
     def test_missing_drm_and_driver_are_reported_without_hiding_gpu(self):
-        self.device('0000:01:00.0', '0x1002', '0x1234')
+        self.device('0001:03:00.0', '0x1002', '0x1234')
         gpus, notes = host_gpu.discover(self.sysfs)
         self.assertEqual(len(gpus), 1)
         self.assertIs(host_gpu.recommend(gpus)[0], gpus[0])
@@ -120,13 +120,13 @@ class HostGPUTests(unittest.TestCase):
         names, notes = host_gpu.model_names(which=lambda name: None)
         self.assertEqual(names, {})
         self.assertIn('sudo apt install pciutils', notes[0])
-        self.device('0000:01:00.0', '0x10de', '0x2803')
-        self.assertIn('10de:2803', host_gpu.discover(self.sysfs, names=names)[0][0]['name'])
+        self.device('0001:03:00.0', '0x10de', '0x2222')
+        self.assertIn('10de:2222', host_gpu.discover(self.sysfs, names=names)[0][0]['name'])
 
     def test_lspci_machine_readable_names_and_failures(self):
-        result = SimpleNamespace(returncode=0, stdout='0000:01:00.0 "VGA controller" "NVIDIA Corporation" "GeForce RTX 4060 Ti" -ra1\n')
+        result = SimpleNamespace(returncode=0, stdout='0001:03:00.0 "VGA controller" "NVIDIA Corporation" "GeForce RTX (fixture)" -ra1\n')
         names, notes = host_gpu.model_names(which=lambda name: '/bin/lspci', run=lambda *a, **kw: result)
-        self.assertEqual(names, {'0000:01:00.0': 'NVIDIA Corporation GeForce RTX 4060 Ti'})
+        self.assertEqual(names, {'0001:03:00.0': 'NVIDIA Corporation GeForce RTX (fixture)'})
         self.assertEqual(notes, [])
         def timeout(*args, **kwargs):
             raise subprocess.TimeoutExpired('lspci', 5)

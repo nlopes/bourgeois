@@ -13,16 +13,23 @@ bourgeois themes GRUB while preserving its existing OS boot logic and recovery p
 Slim uses the unchanged distribution binary and a hero that snaps between doors.
 Fancy adds a native GRUB module for walking and animated sand.
 
+image::docs/research/mockups/fancy-demo.gif[Fancy walks left to right to left and selects Linux,960]
+
+The recording uses the Fancy image confirmed on the physical host, running in disposable Secure Boot QEMU.
+Linux selection uses a routing fixture.
+The xref:docs/research/mockups/fancy-demo.png[still frame] is extracted from this GIF.
+
 == Research
 
 See xref:docs/research/README.adoc[the research and mockups] for the feasibility assessment, interface proposals, and source references.
-The current xref:docs/research/mockups/slim-host-windows-selected.png[slim capture] and xref:docs/research/mockups/fancy-runtime.png[fancy capture] show running GRUB in QEMU.
+The current xref:docs/research/mockups/slim-host-windows-selected.png[slim capture] and xref:docs/research/mockups/fancy-demo.png[fancy capture] show running GRUB in QEMU.
 
 == Development lab
 
 The first target is Ubuntu 24.04 LTS on x86_64 UEFI.
 The lab uses a disposable QEMU disk; it does not change the host's boot configuration.
-Secure Boot and real Windows boot validation are deferred.
+Windows lab tests use a routing fixture.
+The separate Ubuntu 26.04 host workflow below covers the Secure Boot trial.
 Both editions use the same courtyard artwork with stone-framed OS nameplates.
 
 Install Python 3.11 or newer, a C compiler, Make, QEMU, xorriso, and OpenSSH.
@@ -86,7 +93,7 @@ make host-gpu-select
 ----
 
 The GPU chooser shows setup guidance for the selected adapter.
-The current host has Intel UHD Graphics 770 and NVIDIA RTX 4060 Ti; NVIDIA is recommended because it is the boot VGA device and has the connected monitor.
+The tool identifies available adapters and recommends a connected firmware display adapter.
 Firmware and monitor routing determine which adapter GRUB uses.
 The chooser does not change firmware settings or Linux drivers.
 `lspci` is optional; install `pciutils` for model names, or the report uses kernel PCI IDs.
@@ -144,6 +151,11 @@ python3 tools/lab.py reset
 Left/Right walks to a gate; Space enters at the threshold.
 L/W boots immediately and Esc returns to Ubuntu's technical menu.
 The animated sand and live seconds share the 30-second Linux timer.
+Input cancels automatic boot for that visit; the original hourglass reads `PAUSED` and never resumes.
+Full-scene rendering now uses a 17-millisecond frame budget, confirmed visible in a physical trial.
+Repeated arrows preserve walking progress and keep the hero facing the selected gate.
+This permits up to about 59 FPS when drawing fits the budget; actual performance depends on the firmware.
+See xref:docs/research/fancy-performance.adoc[the performance record and physical trial limits].
 Fancy inherits GRUB's display mode and scales its text and hourglass for the actual resolution.
 Its centered gate prompts, walking behavior, and draining sand retain their own layout.
 Boot messages keep the courtyard visible in a full-screen terminal.
@@ -154,6 +166,26 @@ They keep Ubuntu's original EFI binary intact.
 See xref:docs/research/preview.adoc[the preview guide] for controls, recovery, removal, and packaging.
 See xref:docs/research/validation.adoc[the validation record] for checked behavior and limits.
 
+=== One-time host trial
+
+The Ubuntu 26.04 host workflow uses a separate GRUB 2.14 image and explicit Secure Boot hash enrollment.
+The host trial embeds trusted fonts, preserves the native boot commands, and uses the working 2560x1440 setting.
+`make host-fancy-stage` builds without host boot changes; `make host-fancy-check` tests the staged image in Secure Boot QEMU.
+Installation, enrollment, and `make host-fancy-once` are separate steps, keeping Ubuntu/Slim as the normal default.
+Both earlier performance previews were withdrawn after physical black-screen reports; the host guide covers restoring a reviewed stage.
+The subsequent isolated cadence and controller trials worked physically and are now the default Fancy source and stage.
+See xref:docs/research/host-fancy.adoc[the host trial guide] for prerequisites, exact commands, verification limits, and removal.
+
+To regenerate the walking GIF and its extracted still from the staged image, use the host guide's Secure Boot VM prerequisites and run:
+
+[source,shell]
+----
+make host-fancy-demo
+----
+
+The files are written under `build/fancy-demo/trusted/`.
+Set `HOST_FANCY_DEMO` to a fresh directory for another recording.
+
 == Checks and packages
 
 `make test` runs the Python and C checks without a VM.
@@ -161,7 +193,8 @@ After installing an edition in the running guest, `make boot-test` checks its in
 Run only one boot-test process against the VM at a time, and inspect the runtime captures under `build/evidence/`.
 After `make native-build` and `make fancy`, `make dist` packages both previews and checksums under `build/dist/`.
 Packaging uses the cached EFI image and matching GRUB source archives and does not require a running guest.
-These are development previews for the disposable lab, not real-machine installers.
+The packaged previews target the disposable lab.
+The separate host trial workflow is limited to the inspected Ubuntu 26.04 configuration.
 
 == Licenses
 

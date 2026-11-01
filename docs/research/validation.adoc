@@ -114,10 +114,99 @@ The custom EFI digest matches the locally built image, and the guest's compiled 
 The layout tests cover small displays, 1440p, 4K, narrow modes, and the font-size cap.
 Only the listed rendering modes were boot-tested; the layout calculations alone do not validate a firmware mode.
 The Fancy archive was checked for all six generated fonts, their notices, and the new layout source.
-The physical host continues using signed stock GRUB and Slim.
-These checks do not validate native Fancy installation or Secure Boot signing on the host.
+At that stage, the physical host continued using signed stock GRUB and Slim.
+That disposable-guest run did not validate native Fancy installation or Secure Boot trust on the host.
+The later host trial is recorded below.
 
 image::mockups/fancy-handoff.png[Fancy's full-screen courtyard behind a boot fixture message at 2560x1440,width=1280]
+
+== Fancy Secure Boot host trial
+
+On 2026-11-01, Fancy was built for the inspected Ubuntu 26.04 host using its matching `grub2-unsigned` source and EFI modules, version `2.14-2ubuntu1`.
+The separate EFI image embeds its fonts, artwork, and inspected native menu commands.
+The 2560x1440 display setting is inherited from the working host configuration.
+The trial uses image hash enrollment through MokManager; kernel-module-only certificates cannot authorize an EFI bootloader.
+
+The exact staged image passed three disposable Secure Boot QEMU checks with the host's public SBAT revocation levels.
+Its enrolled Authenticode hash allowed shim to load GRUB with `shim_lock=y` and render Fancy at 2560x1440.
+Esc returned to the full native technical menu.
+Shim rejected the same image without enrollment and rejected an altered image despite enrollment of the original hash.
+Those virtual disks contain no installed operating systems; their scope is trust, rendering, and recovery-menu checks.
+
+The host owner subsequently reported that the physical trial worked.
+Read-only inspection confirmed that the running system had booted through the separate Fancy entry, the separate trial entry.
+Secure Boot remained enabled, the original boot ordering was preserved with Ubuntu first, and BootNext had been consumed.
+The report is user-observed physical validation; it is separate from the automated VM results.
+
+The initial host preparation suite passed 72 Python tests and two C checks.
+Its temporary-root tests cover native menu preservation, enrolled-hash checks, unchanged default ordering, existing BootNext preservation, stale snapshots, altered images, failed-copy cleanup, unexpected firmware-order recovery, and trial removal.
+See xref:host-fancy.adoc[the host trial guide] for exact commands, the tested image hash, captures, and removal.
+The installed image contains a menu snapshot; a changed kernel or menu requires rebuilding and enrolling the newly tested image before another trial.
+Ubuntu/Slim remains the normal default.
+
+== Fancy input polish
+
+A Secure Boot QEMU reproduction showed that pressing Left again at the Linux gate turned the standing traveler toward Windows.
+The renderer had inferred facing from `target < origin`, but those positions coincide after repeated input at a reached gate.
+Facing now records the last requested direction independently of the travel distance.
+The cancelled countdown label is now `MANUAL`, consistent with cancellation lasting for the entire scene visit.
+
+The C regressions cover arrival at both gates, repeated arrows, direction reversal, and continued cancellation.
+The withdrawn source's suite passed 75 Python tests and the C controller, layout, and animation checks.
+The updated GRUB 2.14 image passed the Secure Boot acceptance, untrusted-image rejection, tamper rejection, 2560x1440 rendering, and Esc recovery checks.
+The VM checker also walks to each gate and compares the complete standing frame before and after repeating that gate's arrow.
+Both comparisons are pixel-identical.
+The Linux-facing and Windows-facing captures were visually inspected.
+The initial optimization preserved static scenery, targeted 60 FPS, polled input between frames, and drained sand at physical-pixel resolution.
+Its 1440p VM benchmark measured 60.0 FPS for the countdown, up from 25.0 FPS, with mean drawing time reduced from 21 ms to under 1 ms.
+Its input checks passed immediate L/W routing, Space only after arrival, cancellation beyond 30 seconds, and untouched Linux fixture routing at 30,000 milliseconds.
+The same controller checks also passed at 800x600 in the preceding run.
+See xref:fancy-performance.adoc[the performance record] and xref:fancy-performance.json[raw counters] for the methodology and complete results.
+The physical trial of this optimization then produced a black screen, followed by automatic Linux boot after roughly 30 seconds.
+The owner supplied the installed file hash and manifest, confirming that the tested optimization was installed.
+It is withdrawn; the host installer, enrollment command, and one-time selector reject its hash while allowing removal.
+The earlier successful physical trial refers to the original image.
+
+The conservative replacement restores complete-scene drawing, per-frame input polling, relative pacing, and the original 25 FPS default.
+It retains the controller corrections, faster pose changes, and fine sand movement.
+The optional 60 FPS setting uses the complete-scene path.
+The exact replacement passed the three Secure Boot cases, repeated gate comparisons, Esc, L/W, Space at the gate, cancellation beyond 30 seconds, and the untouched timer at 30,000 milliseconds.
+The default timer rendered 750 frames in 30 seconds; the optional faster budget reached about 38 FPS in the same VM.
+The owner then reported a physical black screen with the full-scene replacement too.
+Its hash was enrolled and the separate Fancy entry was used; the installed file digest was not collected after this second report.
+Both failing hashes are withdrawn from host installation, enrollment, and one-time selection, while removal remains available.
+The exact cause remains unknown; the next physical check restores the preserved original image without new enrollment.
+Original and replacement stages have byte-identical artwork, fonts, bootstrap configuration, native menu configuration, and SBAT metadata.
+The owner then restored the preserved original image and confirmed that Fancy was visible again.
+Read-only inspection confirmed the separate Fancy BootCurrent entry, Secure Boot enabled, unchanged Ubuntu-first BootOrder, and no pending BootNext.
+The subsequent isolated cadence stage uses the original renderer with only its 40-millisecond frame interval changed to 17 milliseconds.
+Its native module has the same size and differs by exactly two bytes encoding the interval constants.
+The EFI core sections, other embedded modules, asset/font/configuration contents, and PE section sizes match the working image.
+This isolates the cadence experiment from the withdrawn sand, controller, and rendering changes.
+Its 2560x1440 Secure Boot VM run passed both gate captures, courtyard restoration, Esc, cancellation beyond 30 seconds, L/W, Space at the gate, and untouched Linux fixture selection.
+Shim accepted its enrolled hash and rejected untrusted and altered copies.
+The harness observed 1,153 frames over 31,158 milliseconds, about 37 FPS; this uses host monotonic time because the original renderer lacks newer scene timing counters.
+The original gate-facing behavior is retained; this experiment does not claim the later facing fixes.
+The owner subsequently confirmed that the cadence trial worked physically, while reporting that walking and changing direction felt mostly unchanged.
+Secure Boot remained enabled, the separate Fancy entry was used, Ubuntu remained first in BootOrder, and BootNext was consumed.
+The repository's default native source was then restored to this confirmed cadence code.
+A fresh default build reproduced the exact full-file and Authenticode hashes of the physically tested stage.
+
+
+== Isolated controller trial
+
+The next stage changes only the controller and actor-facing selection on top of the confirmed cadence source.
+The historical delta is retained in `fancy/controller-trial.patch`; its source and regressions are now included by default.
+It preserves fractional walking progress under repeated arrows and the selected gate's facing after arrival.
+The hourglass, labels, pose cadence, graphics loop, and profiling remain those of the working baseline.
+Its C controller regressions and Secure Boot VM cases passed.
+Standing frames at both gates remained pixel-identical after repeating their arrows, with no courtyard trails.
+Immediate L/W, Space after arrival, cancellation beyond 30 seconds, Esc, and untouched Linux fixture selection passed.
+The host harness observed 1,152 frames over 31,159 milliseconds, about 37 FPS.
+The owner completed the physical controller trial and reported that all checks worked.
+A fresh default build reproduced the exact tested image.
+See xref:host-fancy.adoc[the host guide] for exact commands and rollback using a privately reviewed stage.
+The restored default passes 82 Python tests and the C controller and layout checks.
 
 == Validation limits
 
@@ -127,8 +216,8 @@ The static traveler appeared at the selected gate and switched sides on Up/Down.
 The terminal background retained the courtyard during both dummy handoffs, with diagnostic text still visible.
 These rendering checks do not replace real OS boot validation.
 The user separately reported successful Linux and Windows boots with the preceding host artwork installation.
-The monitor advertises 3840x2160 in Linux; the host firmware's GRUB mode list has not yet been confirmed.
-The user later reported that the 3840x2160 trial did not work and 2560x1440 worked, including the selected-door hero.
+The firmware mode list can differ from modes available after the operating system loads.
+The tested preview uses the working 2560x1440 mode, including the selected-door hero.
 The installed signed GRUB image omits `videoinfo`; Secure Boot refused loading that diagnostic's external module.
 The host default is now the verified 2560x1440, with Secure Boot still enabled.
 The bottom menu now follows the Slim concept's gold-trimmed panel, amber selection bar, outlined unselected row, and gold ornaments.

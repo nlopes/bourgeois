@@ -1,0 +1,188 @@
+= Fancy: one-time Secure Boot host trial
+
+== Supported scope
+
+This workflow currently supports Ubuntu 26.04 x86_64 UEFI with Secure Boot, a Btrfs root, and `/boot` on root.
+It builds against `grub-efi-amd64-bin` and authenticated Ubuntu source version `2.14-2ubuntu1`.
+The Ubuntu 24.04 disposable lab remains separate.
+The current builder and VM checks use `2560x1440,auto`; establish a working firmware mode before adapting another system.
+The builder deliberately rejects unrecognized menu hooks, boot layouts, or module versions.
+
+== Trust and recovery
+
+Fancy uses its own `/EFI/bourgeois-fancy/` directory and a separate firmware entry.
+Ubuntu's EFI files, Slim artwork, generated menus, and persistent boot ordering are preserved.
+Installation uses `efibootmgr --create-only`; `make host-fancy-once` selects the verified image through BootNext for one boot.
+The selector checks the installed files, enrolled image hash, current menus, and unchanged default ordering before changing BootNext.
+Firmware consumes this one-time selection before starting the entry.
+Subsequent ordinary boots use Ubuntu/Slim.
+Esc inside Fancy returns to the native technical menu and its existing authentication and recovery entries.
+
+The trial enrolls one image's SHA256 Authenticode hash through MokManager.
+This authorizes that image without granting a general-purpose boot signing certificate.
+Kernel-module-only certificates cannot authorize an EFI bootloader.
+Secure Boot verification, shim lockdown, and the matching distribution SBAT identities remain enabled.
+`pesign --hash` computes the enrollment digest; a full-file SHA256 checks staged file integrity separately.
+Use the hashes printed by the local tooling and recorded in its private manifest.
+
+Native entry headers, commands, IDs, authentication, environment loading, and recovery helpers are preserved.
+Only the recognized scene hook and presentation font references are adapted.
+Fonts and assets are embedded inside the verified image because external font loading can be restricted under Secure Boot.
+The embedded menu is a snapshot: kernel or menu changes require rebuilding and validating the image before another trial.
+
+References: https://wiki.ubuntu.com/UEFI/SecureBoot[Ubuntu Secure Boot], https://github.com/lcp/mokutil/blob/master/man/mokutil.1[mokutil hash enrollment], https://github.com/rhboot/shim/blob/15.8/verify.c[shim verification], and https://github.com/rhboot/efibootmgr/blob/main/README.md[efibootmgr].
+
+== Private preparation
+
+Run commands from the repository root.
+Keep protected snapshots, firmware identifiers, manifests, trust hashes, and local logs under ignored `build/` storage.
+They are deliberately omitted from published documentation and recordings.
+
+The build needs Python 3.11+, GCC, Make, binutils, Bison, Flex, `pesign`, `grub-mkstandalone`, `grub-mkfont`, `grub-script-check`, and DejaVu Sans Mono.
+Ubuntu package names for missing compiler tools are `build-essential`, `binutils`, `bison`, `flex`, and `pesign`.
+Trial installation also needs `sudo`, `mokutil`, `efibootmgr`, `findmnt`, and `lsblk`.
+Do not upgrade GRUB to satisfy these prerequisites; source and EFI module versions must match.
+
+Create private read-only snapshots using interactive sudo authentication:
+
+[source,shell]
+----
+umask 077
+mkdir -p build/host-fancy-inspect
+sudo cat /boot/grub/grub.cfg > build/host-fancy-inspect/grub.cfg
+sudo cat /boot/grub/clean-menu.cfg > build/host-fancy-inspect/clean-menu.cfg
+sudo grub-editenv /boot/grub/grubenv list > build/host-fancy-inspect/grubenv.txt
+----
+
+Acquire matching Ubuntu source through an isolated APT index.
+APT authenticates the archive metadata and source checksums without changing system APT configuration or installing packages.
+
+[source,shell]
+----
+mkdir -p build/host-fancy-source
+cd build/host-fancy-source
+printf '%s\n' 'deb-src [signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg] http://gb.archive.ubuntu.com/ubuntu resolute main' > sources.list
+apt-get -o Dir::Etc::sourcelist="$PWD/sources.list" -o Dir::Etc::sourceparts=- -o Dir::State::lists="$PWD/lists" -o Dir::Cache="$PWD/cache" -o Debug::NoLocking=true update
+apt-get -o Dir::Etc::sourcelist="$PWD/sources.list" -o Dir::Etc::sourceparts=- -o Dir::State::lists="$PWD/lists" -o Dir::Cache="$PWD/cache" -o Debug::NoLocking=true source --download-only grub2-unsigned=2.14-2ubuntu1
+dpkg-source -x grub2-unsigned_2.14-2ubuntu1.dsc
+cd ../..
+make host-fancy-stage
+----
+
+The default stage is `build/fancy-controller/`.
+The module is compiled against configured distribution headers and checked by GRUB's module verifier.
+The stage contains the isolated EFI image, matching signed shim, MokManager, and a private integrity manifest.
+The builder refuses to overwrite reviewed artifacts; use `HOST_FANCY_STAGE=build/a-new-stage` for another build.
+`HOST_FANCY_MODULE_SOURCE` can select isolated renderer source for regression research.
+General preview installation through `make fancy` remains confined to the disposable lab.
+
+== Validate before installation
+
+`make test` checks menu preservation, the controller, layout, and trial management using temporary roots and simulated firmware commands.
+The Secure Boot VM checks need `qemu-system-x86`, `ovmf`, `btrfs-progs`, `dosfstools`, `gdisk`, `mtools`, `python3-pil`, `python3-virt-firmware`, and `python3-pefile`.
+Only file-backed virtual disks and private firmware variables are used.
+No host disks or host firmware variables are exposed to QEMU.
+
+[source,shell]
+----
+make test
+make host-fancy-check
+make host-fancy-benchmark HOST_FANCY_EVIDENCE=build/fancy-benchmark
+----
+
+The basic check verifies enrolled-image acceptance, untrusted and altered-image rejection, rendering, and Esc recovery.
+The benchmark additionally verifies repeated-arrow facing, immediate L/W routing, Space at a gate, cancellation beyond 30 seconds, and untouched Linux fixture selection.
+Its frame counts use the VM harness's monotonic clock without changing the native image's profiling code.
+The fixture entries print routing markers rather than booting physical operating systems.
+Inspect actual captures and logs in addition to the automated result.
+Use fresh evidence directory names to preserve previous runs.
+
+`--original-timing` is the default benchmark mode for the current renderer.
+`--original-renderer` also supports earlier snapshots without the controller facing fix.
+The historical `--benchmark` mode requires newer profiling fields and cannot be combined with these modes.
+
+== Confirmed baseline and withdrawn experiments
+
+The original renderer, isolated frame-interval change, and subsequent controller corrections each passed physical trials.
+The current default combines the confirmed 17-millisecond frame budget with preserved walk progress and explicit gate facing.
+A fresh default build reproduced the exact image tested physically.
+The original hourglass, four poses, labels, and graphics loop remain in place.
+The frame-cap change alone was reported to make little perceived difference to walking.
+Physical FPS has not been measured.
+
+Earlier partial-redraw and broader full-scene experiments produced black screens despite passing VM checks.
+They are withdrawn; the exact cause remains unknown.
+Private failed-stage manifests carry a `withdrawn` flag, and local digests can be listed in `build/fancy-withdrawn.json`.
+That ignored registry uses format `1` and an `authenticode_sha256` list; it contains local machine data and must not be committed.
+Invalid registry data stops trial selection.
+Installation, enrollment, and one-time selection refuse withdrawn images while removal stays available.
+The historical controller delta is retained in `fancy/controller-trial.patch`; it is already included in the default source.
+
+== Record the preview
+
+Use the same VM prerequisites and staged image:
+
+[source,shell]
+----
+make host-fancy-demo
+----
+
+The recorder walks from Linux to Windows, back to Linux, and presses Space.
+Actual GRUB frames become `build/fancy-demo/trusted/fancy-demo.gif`.
+A still is extracted from that encoded GIF as `fancy-demo.png`.
+The Linux entry is a routing fixture; the recording demonstrates selection rather than a kernel boot.
+Private recording metadata stays in `build/`; publish only the reviewed GIF and still.
+Set `HOST_FANCY_DEMO` to a fresh directory for another recording.
+
+image::mockups/fancy-demo.png[Confirmed Fancy controller baseline recorded in Secure Boot QEMU,960]
+
+== Install, enroll, and try once
+
+These commands modify the host and require interactive sudo authentication.
+Complete the private snapshots, stage review, and VM checks first.
+Remove an existing separate trial before replacing it.
+
+[source,shell]
+----
+make host-fancy-install
+make host-fancy-enroll
+----
+
+Installation detects the mounted ESP and records private recovery state under `/var/lib/bourgeois/`.
+Enrollment requests a temporary password for MokManager.
+Reboot normally into Ubuntu's shim, choose `Enroll MOK`, inspect the locally displayed hash, and confirm enrollment with that password.
+Return to Ubuntu/Slim before selecting the trial:
+
+[source,shell]
+----
+make host-fancy-once
+efibootmgr
+----
+
+Check that the persistent Ubuntu-first ordering is unchanged and BootNext selects the separate trial entry.
+Reboot when ready and test Linux first.
+A Windows trial needs another explicit `make host-fancy-once`.
+Ordinary later boots continue through Ubuntu/Slim.
+
+== Remove or restore
+
+To cancel a pending trial and remove its entry and EFI files:
+
+[source,shell]
+----
+make host-fancy-remove
+----
+
+Removal retains image hash enrollment.
+A previously reviewed stage can be restored without re-enrollment when its hash remains enrolled:
+
+[source,shell]
+----
+make host-fancy-install HOST_FANCY_STAGE=build/a-reviewed-stage
+make host-fancy-once
+----
+
+Use the preserved local manifest to identify a reviewed stage and its hash.
+Delete only that enrollment with `sudo mokutil --delete-hash` and the locally recorded digest, then confirm deletion in MokManager.
+Inspect `mokutil --list-new` before cancelling pending imports with `sudo mokutil --revoke-import` so unrelated requests are preserved.
+Keep Secure Boot enabled.

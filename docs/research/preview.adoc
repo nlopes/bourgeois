@@ -49,6 +49,13 @@ The GPU advisor under <<host-gpus>> applies to either edition and only prints se
 |Timer |Any input cancels |Any input cancels
 |===
 
+Fancy retains the original `PAUSED` label after input cancels automatic boot; it does not resume during that visit.
+The renderer redraws the complete scene with a 17-millisecond frame budget.
+This isolated cadence change worked in the physical host trial.
+The subsequent controller trial also worked physically; repeated arrows now preserve progress and facing in the default source.
+The later sand and profiling changes remain separate from that working baseline.
+See xref:fancy-performance.adoc[performance and input validation] for the withdrawn optimizations and isolated trial checks.
+
 Use `python3 tools/lab.py key left`, `key spc`, `key l`, or `key esc` to send QEMU keys.
 Capture the display with `make screenshot`.
 The lab is headless by default.
@@ -152,7 +159,7 @@ make host-doctor
 make host-gpus
 make host-gpu-select
 make host-gpus GPU=integrated
-make host-gpus GPU=0000:01:00.0
+make host-gpus GPU=discrete
 python3 tools/host_gpu.py --json
 ----
 
@@ -165,16 +172,15 @@ If `lspci` is missing, the report explains how to install `pciutils` and continu
 Neither `nvidia-smi` nor a vendor control utility is required.
 Missing sysfs access, missing drivers, unavailable connector information, and missing build tools have specific messages.
 
-The current host has Intel UHD Graphics 770 and NVIDIA RTX 4060 Ti.
-NVIDIA is recommended from its boot VGA flag and connected DP-3 output.
-The Intel outputs currently report no connected monitor.
+The report identifies integrated and discrete adapters using the local system inventory.
+The recommendation uses boot VGA and connected-output evidence, with unknown routing reported explicitly.
 GPU type is inferred only where model or topology evidence supports it; other devices are marked unknown.
 
 Choosing an adapter shows how to connect the monitor and select a primary display in UEFI setup, where supported.
 Stock GRUB receives graphics from firmware; the tool cannot switch that adapter or enable a disabled GPU.
 A firmware-disabled adapter may not appear in Linux's PCI inventory.
 This applies to both Slim and Fancy.
-Keep the known working 2560x1440 setting on this host; Linux connector mode lists do not certify a GRUB resolution.
+Keep a mode already verified in GRUB; Linux connector mode lists do not certify firmware support.
 
 == Tests and packages
 

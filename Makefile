@@ -2,6 +2,11 @@ PYTHON ?= python3
 HOST_SIZE ?= 2560x1440
 HOST_STAGE ?= build/host-theme-review
 BACKUP ?= /var/backups/bourgeois/latest
+HOST_FANCY_STAGE ?= build/fancy-controller
+HOST_FANCY_PESIGN ?= pesign
+HOST_FANCY_MODULE_SOURCE ?= fancy/bourgeois.c
+HOST_FANCY_EVIDENCE ?= build/fancy-sb-check
+HOST_FANCY_DEMO ?= build/fancy-demo
 
 .PHONY: vm vm-stop ssh screenshot test slim host-python host-preflight lab-preflight host-gpus host-gpu-select host-doctor host-stage host-install host-rollback native-build fancy boot-test dist
 vm: lab-preflight
@@ -40,6 +45,23 @@ host-install: host-preflight host-stage
 host-rollback: host-python
 	$(PYTHON) tools/host_checks.py install --sudo
 	sudo $(PYTHON) tools/host_install.py rollback --backup "$(BACKUP)"
+.PHONY: host-fancy-stage host-fancy-check host-fancy-benchmark host-fancy-demo host-fancy-install host-fancy-enroll host-fancy-once host-fancy-remove
+host-fancy-stage: host-python
+	$(PYTHON) tools/host_fancy.py --output "$(HOST_FANCY_STAGE)" --pesign "$(HOST_FANCY_PESIGN)" --module-source "$(HOST_FANCY_MODULE_SOURCE)"
+host-fancy-check: host-python
+	$(PYTHON) tools/host_fancy_vm.py --stage "$(HOST_FANCY_STAGE)" --output "$(HOST_FANCY_EVIDENCE)"
+host-fancy-benchmark: host-python
+	$(PYTHON) tools/host_fancy_vm.py --stage "$(HOST_FANCY_STAGE)" --output "$(HOST_FANCY_EVIDENCE)" --original-timing
+host-fancy-demo: host-python
+	$(PYTHON) tools/host_fancy_vm.py --stage "$(HOST_FANCY_STAGE)" --output "$(HOST_FANCY_DEMO)" --record-demo
+host-fancy-install: host-python
+	sudo $(PYTHON) tools/host_fancy_trial.py install --stage "$(HOST_FANCY_STAGE)"
+host-fancy-enroll: host-python
+	sudo $(PYTHON) tools/host_fancy_trial.py enroll
+host-fancy-once: host-python
+	sudo $(PYTHON) tools/host_fancy_trial.py once
+host-fancy-remove: host-python
+	sudo $(PYTHON) tools/host_fancy_trial.py remove
 native-build: lab-preflight
 	$(PYTHON) tools/native.py build
 fancy: lab-preflight

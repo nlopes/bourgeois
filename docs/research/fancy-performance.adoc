@@ -1,0 +1,136 @@
+= Fancy animation and input performance
+
+== Physical trial status
+
+Both the partial-redraw optimization and its full-scene replacement have physical black-screen reports and are withdrawn.
+Restore the preserved original Fancy image before further host experiments.
+The owner completed that restoration and confirmed the scene appeared again.
+The subsequent isolated frame-interval and controller trials both worked physically and form the current default source.
+
+The partial-redraw optimization passed QEMU checks but produced a black screen on the physical host.
+Linux still started automatically after roughly 30 seconds.
+That image is withdrawn: the host installer, enrollment command, and one-time selector reject it, while removal remains available.
+The exact firmware-specific cause has not been established.
+See xref:host-fancy.adoc#_withdrawn_optimization_and_recovery[restoration of the previously working image].
+
+== Current working baseline
+
+Fancy redraws the complete scene after each input poll, using a 17-millisecond frame budget instead of the original 40 milliseconds.
+The initial cadence-only module changed by exactly two bytes encoding those interval constants.
+The confirmed controller fix was then added without changing the graphics loop or hourglass.
+The owner confirmed that this isolated build worked on the physical host.
+A fresh build from the repository's restored default source reproduced its exact full-file and Authenticode hashes.
+The code keeps the original hourglass, pose cadence, and `PAUSED` label.
+Repeated arrows now preserve walk progress and facing at a gate.
+Input permanently cancels the 30-second timer for that visit.
+
+The interval permits up to about 59 FPS when drawing fits the budget.
+Physical FPS has not been measured.
+The owner reported that walking and changing direction felt mostly unchanged from the original.
+The faster frame budget alone therefore has not delivered the intended perceived improvement.
+The VM's observed result was about 37 FPS; the exact timing method is recorded below.
+The animation, sand, partial redraw, and profiling changes remain separate experiments.
+The withdrawn `bourgeois_fps` override is absent from the restored default source.
+
+The graphics calls use GRUB's https://www.gnu.org/software/grub/manual/grub-dev/grub-dev.html#Video-API[Video API].
+The inspected Ubuntu source's `grub-core/video/efi_gop.c`, `grub_video_gop_swap_buffers`, calls firmware to present its complete shadow buffer.
+Drawing and firmware presentation time both limit the achievable frame rate.
+
+== Historical optimization measurements
+
+These samples use QEMU 10.2.1, x86 software emulation, Microsoft-keyed Secure Boot OVMF, matching Ubuntu GRUB 2.14 modules, and 2560x1440.
+The baseline retains the original renderer with profiling counters.
+The optimized column describes the withdrawn image, not the current source or a working physical configuration.
+See xref:fancy-performance.json[the raw counters and trial status].
+
+[cols="2,1,1",options="header"]
+|===
+|Measurement |Original |Withdrawn optimization
+|Active countdown |25.0 FPS |60.0 FPS
+|Walking profile, including stops at gates |25.0 FPS |52.2 FPS
+|Mean drawing time during countdown and walking |21 ms |Under 1 ms
+|Mean firmware presentation time |3 ms |3 ms
+|Largest input-poll gap after the first frame |40 ms |6–9 ms
+|Frames presented during the 8-second manual-idle sample |205 |4
+|Live background and traveler bitmap bytes |11,898,880 |11,898,880
+|===
+
+Counters use GRUB's millisecond clock; averages below one millisecond round down to zero.
+The first frame still drew the complete scene.
+These VM results did not predict the physical black screen.
+
+== Withdrawn full-scene replacement results
+
+Its 2560x1440 Secure Boot VM run passed rendering, repeated gate selection, courtyard restoration, Esc, trusted-image acceptance, untrusted-image rejection, and tamper rejection.
+The input fixture passed cancellation beyond 30 seconds, immediate L/W routing, Space only at a gate, and the untouched Linux timer at exactly 30,000 milliseconds.
+The timer produced 750 frames in 30 seconds, confirming the default 25 FPS cadence.
+
+With the optional 60 FPS budget, full-scene drawing reached 38.4 FPS during the countdown and 38.3 FPS during walking and manual idle in this VM.
+Drawing averaged 21 milliseconds and firmware presentation averaged 3 milliseconds.
+This path redraws while idle as well, matching the original renderer.
+The replacement retains 11,898,880 bytes of background and traveler bitmaps.
+These are VM measurements.
+The owner subsequently reported a black screen with this full-scene replacement too.
+Its hash was enrolled and the host booted through the separate Fancy entry, but its installed file digest was not collected after this report.
+Returning to full-scene drawing and 25 FPS did not resolve the reported issue; the exact cause remains unknown.
+Installation, enrollment, and one-time selection of both failing hashes are now refused.
+The preserved original image remains the recovery baseline.
+
+== Isolated cadence trial
+
+After restoration of the original image succeeded physically, `build/fancy-cadence` was built from that renderer with only the frame interval changed from 40 to 17 milliseconds.
+The native module differs by exactly two bytes and keeps its original size.
+The EFI core sections and PE section sizes are unchanged; the only embedded file content that differs is `bourgeois.mod`.
+This retains the original hourglass, pose cadence, controls, and rendering path.
+
+The Secure Boot VM checks passed trusted acceptance, untrusted and tampered rejection, 1440p rendering at both gates, courtyard restoration, and Esc.
+The routing fixture passed cancellation beyond 30 seconds, immediate L/W, Space after arrival, and untouched automatic Linux selection.
+The last run produced 1,153 frames over 31,158 milliseconds measured by the harness, about 37.0 FPS.
+This uses the host monotonic clock because the original renderer lacks the newer `scene_ms` counter; it is not directly the same clock as the historical GRUB timing measurements above.
+The original gate-facing behavior was retained in the cadence-only experiment.
+The owner then tried this image physically and confirmed that it worked.
+The separate trial preserved the normal distribution boot path.
+Its subsequent controller correction is now included in the default source; broad withdrawn changes remain separate.
+See xref:host-fancy.adoc[the source, checks, and one-time trial procedure].
+
+== Isolated controller trial
+
+The confirmed image, `build/fancy-controller`, changes only the controller and the expression selecting the traveler's facing, on top of the working cadence source.
+It preserves interpolation under repeated arrows and keeps the traveler facing the selected gate after arrival.
+The historical delta and regressions are retained in `fancy/controller-trial.patch` and are already included in the default source.
+The renderer, hourglass, pose cadence, labels, and profiling code remain those of the confirmed baseline.
+Its controller C regressions and Secure Boot VM cases passed.
+Repeated arrows at each gate produced pixel-identical standing frames; the courtyard had no walking trails.
+The routing fixture passed cancellation, immediate L/W, Space at a gate, and automatic Linux selection.
+The timer sample produced 1,152 frames over 31,159 milliseconds observed by the host harness, about 37.0 FPS.
+The owner completed the physical controller trial and reported that all checks worked.
+A fresh default build reproduced the exact tested image.
+See xref:host-fancy.adoc[the build, regression checks, and one-time trial commands].
+
+== Reproduce the working baseline checks
+
+Use the source, prerequisites, snapshots, and Secure Boot VM dependencies from xref:host-fancy.adoc[the host trial guide].
+Build and benchmark the restored default source:
+
+[source,shell]
+----
+make test
+make host-fancy-stage HOST_FANCY_STAGE=build/fancy-controller-default
+make host-fancy-benchmark HOST_FANCY_STAGE=build/fancy-controller-default HOST_FANCY_EVIDENCE=build/fancy-controller-default-check
+----
+
+Use fresh stage and evidence directory names when artifacts already exist.
+The default benchmark uses `--original-timing` for the confirmed source and also checks repeated-arrow facing.
+It checks cancellation beyond 30 seconds, immediate L/W, Space after arrival, and the full untouched timer.
+The timer sample records frame count and FPS using the host monotonic clock, without adding profiling code to the EFI image.
+Tracing is enabled only in the disposable VM; staged host configuration keeps tracing disabled.
+Results are written to `trusted/input-checks.json` and `trusted/debug.log`.
+
+The checker also captures both gates, compares the intervening courtyard to detect trails, checks Esc, and verifies shim rejection of untrusted and altered images.
+Repeated-arrow facing comparisons are enabled by `--original-timing` for the controller trial or `--benchmark` for the historical profiling builds.
+The detailed `--benchmark` mode requires the newer profiling fields absent from the current working source.
+The fixture entries print routing markers; they do not boot physical operating systems.
+Inspect actual GRUB captures as well as automated results.
+`make test` passes 82 Python checks and the C controller and layout checks.
+The default controller test includes the repeated-arrow and facing regressions.
+The README recording uses this confirmed build; local identity and trust details are omitted from published results.

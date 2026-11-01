@@ -1,0 +1,89 @@
+--- a/bourgeois.c
++++ b/bourgeois.c
+@@ -252,7 +252,7 @@
+       label ("A journey begins with a door", width / 2, 72 * ui_scale, 0);
+       {
+         int frame = state.x != state.target ? (now / 140) % 4 : 0;
+-        grub_video_blit_bitmap (state.target < state.origin ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
++        grub_video_blit_bitmap (state.facing_left ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
+                                 state.x * width / SCENE_WIDTH - frame_width / 2,
+                                 height * 73 / 100 - frame_height,
+                                 frame * frame_width, 0, frame_width, frame_height);
+--- a/state.h
++++ b/state.h
+@@ -13,7 +13,7 @@
+ struct scene_state
+ {
+   unsigned long long started, move_started;
+-  int x, origin, target, cancelled, remaining;
++  int x, origin, target, facing_left, cancelled, remaining;
+ };
+ 
+ static void
+@@ -21,6 +21,7 @@
+ {
+   s->started = s->move_started = now;
+   s->x = s->origin = s->target = SCENE_WIDTH / 2;
++  s->facing_left = 0;
+   s->cancelled = 0;
+   s->remaining = 30000;
+ }
+@@ -52,9 +53,17 @@
+     return SCENE_BOOT_WINDOWS;
+   if (key == SCENE_LEFT || key == SCENE_RIGHT)
+     {
+-      s->origin = s->x;
+-      s->target = key == SCENE_LEFT ? SCENE_LINUX_GATE_X : SCENE_WINDOWS_GATE_X;
+-      s->move_started = now;
++      int target = key == SCENE_LEFT ? SCENE_LINUX_GATE_X : SCENE_WINDOWS_GATE_X;
++      /* Keep facing explicit: zero travel distance has no direction. */
++      s->facing_left = key == SCENE_LEFT;
++      /* Keyboard repeat must not restart interpolation or lose fractional
++         travel distance. Reversal still starts at the current position. */
++      if (target != s->target)
++        {
++          s->origin = s->x;
++          s->target = target;
++          s->move_started = now;
++        }
+     }
+   return SCENE_WAIT;
+ }
+--- a/state_test.c
++++ b/state_test.c
+@@ -33,5 +33,35 @@
+   assert (scene_step (&s, 1222, SCENE_SPACE) == SCENE_WAIT);
+   assert (scene_step (&s, 1223, SCENE_SPACE) == SCENE_BOOT_LINUX);
+   assert (scene_step (&s, 100000, SCENE_SPACE) == SCENE_BOOT_LINUX);
++  /* Repeating the same arrow at a gate must not turn the standing traveler
++     away from that gate or restart movement. */
++  scene_init (&s, 0);
++  assert (!s.facing_left);
++  scene_step (&s, 0, SCENE_LEFT);
++  scene_step (&s, 2000, SCENE_NONE);
++  assert (s.x == SCENE_LINUX_GATE_X && s.facing_left);
++  scene_step (&s, 2001, SCENE_LEFT);
++  scene_step (&s, 2002, SCENE_OTHER);
++  assert (s.x == SCENE_LINUX_GATE_X && s.facing_left);
++  scene_step (&s, 2003, SCENE_RIGHT);
++  assert (!s.facing_left);
++  scene_step (&s, 5000, SCENE_NONE);
++  assert (s.x == SCENE_WINDOWS_GATE_X && !s.facing_left);
++  scene_step (&s, 5001, SCENE_RIGHT);
++  assert (!s.facing_left);
++  scene_step (&s, 5002, SCENE_LEFT);
++  assert (s.facing_left);
++  /* Cancellation is permanent for this scene visit, including after repeats. */
++  assert (scene_step (&s, 100000, SCENE_NONE) == SCENE_WAIT);
++  scene_init (&s, 0);
++  scene_step (&s, 0, SCENE_LEFT);
++  {
++    int now;
++    for (now = 33; now < 1223; now += 33)
++      scene_step (&s, now, SCENE_LEFT);
++  }
++  assert (s.move_started == 0);
++  assert (scene_step (&s, 1223, SCENE_NONE) == SCENE_WAIT);
++  assert (s.x == SCENE_LINUX_GATE_X && s.facing_left);
+   return 0;
+ }

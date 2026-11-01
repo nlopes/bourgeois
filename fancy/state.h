@@ -13,7 +13,7 @@ enum { SCENE_WIDTH = 2400,
 struct scene_state
 {
   unsigned long long started, move_started;
-  int x, origin, target, cancelled, remaining;
+  int x, origin, target, facing_left, cancelled, remaining;
 };
 
 static void
@@ -21,6 +21,7 @@ scene_init (struct scene_state *s, unsigned long long now)
 {
   s->started = s->move_started = now;
   s->x = s->origin = s->target = SCENE_WIDTH / 2;
+  s->facing_left = 0;
   s->cancelled = 0;
   s->remaining = 30000;
 }
@@ -52,9 +53,17 @@ scene_step (struct scene_state *s, unsigned long long now, enum scene_key key)
     return SCENE_BOOT_WINDOWS;
   if (key == SCENE_LEFT || key == SCENE_RIGHT)
     {
-      s->origin = s->x;
-      s->target = key == SCENE_LEFT ? SCENE_LINUX_GATE_X : SCENE_WINDOWS_GATE_X;
-      s->move_started = now;
+      int target = key == SCENE_LEFT ? SCENE_LINUX_GATE_X : SCENE_WINDOWS_GATE_X;
+      /* Keep facing explicit: zero travel distance has no direction. */
+      s->facing_left = key == SCENE_LEFT;
+      /* Keyboard repeat must not restart interpolation or lose fractional
+         travel distance. Reversal still starts at the current position. */
+      if (target != s->target)
+        {
+          s->origin = s->x;
+          s->target = target;
+          s->move_started = now;
+        }
     }
   return SCENE_WAIT;
 }

@@ -252,7 +252,7 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       label ("A journey begins with a door", width / 2, 72 * ui_scale, 0);
       {
         int frame = state.x != state.target ? (now / 140) % 4 : 0;
-        grub_video_blit_bitmap (state.target < state.origin ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
+        grub_video_blit_bitmap (state.facing_left ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
                                 state.x * width / SCENE_WIDTH - frame_width / 2,
                                 height * 73 / 100 - frame_height,
                                 frame * frame_width, 0, frame_width, frame_height);
@@ -271,7 +271,7 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
         render_total += elapsed;
         if (elapsed > render_max)
           render_max = elapsed;
-        grub_millisleep (elapsed < 40 ? 40 - elapsed : 1);
+        grub_millisleep (elapsed < 17 ? 17 - elapsed : 1);
       }
     }
   if (action == SCENE_TECHNICAL)

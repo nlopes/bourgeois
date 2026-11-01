@@ -1,0 +1,233 @@
+{
+  "format": 1,
+  "environment": {
+    "qemu": "10.2.1",
+    "acceleration": "TCG",
+    "secure_boot": true,
+    "resolution": [
+      2560,
+      1440
+    ],
+    "grub": "2.14-2ubuntu1"
+  },
+  "baseline": {
+    "countdown": {
+      "frames": 204,
+      "avg_ms": 25,
+      "max_ms": 27,
+      "bitmap_bytes": 11898880,
+      "draw_avg_ms": 21,
+      "swap_avg_ms": 3,
+      "input_max_ms": 40,
+      "scene_ms": 8160,
+      "fps": 25.0
+    },
+    "walking": {
+      "frames": 203,
+      "avg_ms": 25,
+      "max_ms": 26,
+      "bitmap_bytes": 11898880,
+      "draw_avg_ms": 21,
+      "swap_avg_ms": 3,
+      "input_max_ms": 40,
+      "scene_ms": 8120,
+      "fps": 25.0
+    },
+    "manual": {
+      "frames": 205,
+      "avg_ms": 25,
+      "max_ms": 29,
+      "bitmap_bytes": 11898880,
+      "draw_avg_ms": 21,
+      "swap_avg_ms": 3,
+      "input_max_ms": 40,
+      "scene_ms": 8200,
+      "fps": 25.0
+    }
+  },
+  "responsive": {
+    "countdown": {
+      "frames": 488,
+      "avg_ms": 3,
+      "max_ms": 26,
+      "bitmap_bytes": 11898880,
+      "draw_avg_ms": 0,
+      "swap_avg_ms": 3,
+      "input_max_ms": 26,
+      "input_steady_max_ms": 6,
+      "scene_ms": 8135,
+      "fps": 60.0
+    },
+    "walking": {
+      "frames": 425,
+      "avg_ms": 4,
+      "max_ms": 26,
+      "bitmap_bytes": 11898880,
+      "draw_avg_ms": 0,
+      "swap_avg_ms": 3,
+      "input_max_ms": 26,
+      "input_steady_max_ms": 9,
+      "scene_ms": 8141,
+      "fps": 52.2
+    },
+    "manual": {
+      "frames": 4,
+      "avg_ms": 11,
+      "max_ms": 26,
+      "bitmap_bytes": 11898880,
+      "draw_avg_ms": 7,
+      "swap_avg_ms": 3,
+      "input_max_ms": 26,
+      "input_steady_max_ms": 9,
+      "scene_ms": 8114,
+      "fps": 0.5
+    }
+  },
+  "input_checks": {
+    "cancel_beyond_30_seconds": true,
+    "space_only_at_gate": true,
+    "l_immediate": true,
+    "w_immediate": true,
+    "untouched_timer_ms": 30000
+  },
+  "physical_trial": {
+    "status": "withdrawn",
+    "observation": "Black screen; Linux automatically booted after roughly 30 seconds.",
+    "cause": "Unknown; QEMU checks did not reproduce the physical failure."
+  },
+  "conservative": {
+    "physical_trial": "withdrawn",
+    "default_refresh_hz": 25,
+    "rendering": "Full scene after each input poll, relative frame pacing.",
+    "benchmark_refresh_hz": 60,
+    "benchmark": {
+      "countdown": {
+        "frames": 314,
+        "avg_ms": 25,
+        "max_ms": 27,
+        "bitmap_bytes": 11898880,
+        "draw_avg_ms": 21,
+        "swap_avg_ms": 3,
+        "input_max_ms": 28,
+        "input_steady_max_ms": 28,
+        "scene_ms": 8169,
+        "refresh_hz": 60,
+        "fps": 38.4
+      },
+      "walking": {
+        "frames": 312,
+        "avg_ms": 25,
+        "max_ms": 28,
+        "bitmap_bytes": 11898880,
+        "draw_avg_ms": 21,
+        "swap_avg_ms": 3,
+        "input_max_ms": 29,
+        "input_steady_max_ms": 29,
+        "scene_ms": 8155,
+        "refresh_hz": 60,
+        "fps": 38.3
+      },
+      "manual": {
+        "frames": 312,
+        "avg_ms": 25,
+        "max_ms": 28,
+        "bitmap_bytes": 11898880,
+        "draw_avg_ms": 21,
+        "swap_avg_ms": 3,
+        "input_max_ms": 29,
+        "input_steady_max_ms": 29,
+        "scene_ms": 8143,
+        "refresh_hz": 60,
+        "fps": 38.3
+      }
+    },
+    "input_checks": {
+      "cancel_beyond_30_seconds": true,
+      "space_only_at_gate": true,
+      "l_immediate": true,
+      "w_immediate": true,
+      "untouched_timer_ms": 30000,
+      "default_refresh_hz": 25
+    },
+    "secure_boot_checks": {
+      "trusted": true,
+      "untrusted_rejected": true,
+      "tampered_rejected": true
+    },
+    "physical_observation": "Owner reported a black screen again after the full-scene replacement trial."
+  },
+  "recovery": {
+    "physical_trial": "restored original; owner confirmed the scene appeared again"
+  },
+  "cadence_trial": {
+    "physical_trial": "owner confirmed the frame-interval trial worked",
+    "comparison": {
+      "baseline_source_commit": "7d2e9eff",
+      "source_change": "Frame interval only: 40 milliseconds to 17 milliseconds.",
+      "unchanged_core_sections": [
+        ".text",
+        ".data",
+        ".sbat",
+        ".reloc"
+      ],
+      "same_section_sizes": true,
+      "different_embedded_modules": [
+        "bourgeois"
+      ],
+      "different_embedded_files": [
+        "boot/grub/x86_64-efi/bourgeois.mod"
+      ],
+      "same_module_size": true,
+      "module_byte_differences": [
+        {
+          "offset": 4244,
+          "old": 39,
+          "new": 16
+        },
+        {
+          "offset": 4253,
+          "old": 40,
+          "new": 17
+        }
+      ]
+    },
+    "input_checks": {
+      "cancel_beyond_30_seconds": true,
+      "space_only_at_gate": true,
+      "l_immediate": true,
+      "w_immediate": true,
+      "untouched_timer_observed_ms": 31158,
+      "untouched_timer_frames": 1153,
+      "untouched_timer_observed_fps": 37.0
+    },
+    "timing_clock": "VM harness host monotonic clock; original module has no scene_ms counter.",
+    "secure_boot_checks": {
+      "trusted": true,
+      "untrusted_rejected": true,
+      "tampered_rejected": true
+    },
+    "owner_motion_feedback": "Mostly unchanged walking and changing direction compared with the original.",
+    "default_source_reproduces_image": true
+  },
+  "controller_trial": {
+    "source_patch": "fancy/controller-trial.patch",
+    "physical_trial": "owner confirmed all controller trial checks worked",
+    "input_checks": {
+      "cancel_beyond_30_seconds": true,
+      "space_only_at_gate": true,
+      "l_immediate": true,
+      "w_immediate": true,
+      "untouched_timer_observed_ms": 31159,
+      "untouched_timer_frames": 1152,
+      "untouched_timer_observed_fps": 37.0
+    },
+    "scope": "State controller and actor-facing expression only; baseline render, hourglass, cadence, and profiling retained.",
+    "secure_boot_checks": {
+      "trusted": true,
+      "untrusted_rejected": true,
+      "tampered_rejected": true
+    },
+    "repeated_arrow_frames_identical": true,
+    "default_source_reproduces_image": true
+  }
+}

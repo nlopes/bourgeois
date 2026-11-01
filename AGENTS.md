@@ -11,7 +11,7 @@ Development targets Ubuntu 24.04 x86_64 UEFI in a disposable QEMU guest.
 - `docs/research/mockups/` contains concept boards, generation prompts, and runtime captures.
 - `tools/` contains Python build and VM tooling, with tests beside the code.
 - `assets/` contains shared PNG artwork and generation prompts.
-- `fancy/` contains the GPLv3+ native GRUB module and its license.
+- `fancy/` contains the GPLv3+ native GRUB module, isolated trial patches, and its license.
 - `build/` contains ignored guest disks, keys, caches, and evidence.
 
 Add implementation directories when needed, and document their purpose here.
@@ -24,7 +24,8 @@ Keep the README focused on the project and its setup.
 - Fancy uses a native module in a separate EFI image. Left/Right walks; Space enters only at a gate; L/W boots immediately.
 - Keep Linux and Windows as the two OS choices. Default to Linux after 30 seconds, cancel the timer on input, and keep Esc as the route to the technical menu.
 - Keep the shared stone nameplates in the background artwork and preserve each edition's title, controls, and visual layout. See `assets/README.adoc` for asset sources.
-- Install development previews only in the disposable lab guest. Use the backed-up host installer for the existing Slim host theme. Windows lab tests use a routing fixture; see `docs/research/validation.adoc` for validation limits.
+- Keep host snapshots, firmware identifiers, trust hashes, hardware inventories, and private logs in ignored `build/` storage. Use synthetic identifiers in committed fixtures and publish only captures without host details or personal metadata.
+- Install general development previews only in the disposable lab guest. Use the backed-up host installer for the existing Slim host theme. The explicitly requested Fancy host trial uses the separate, hash-enrolled EFI and one-time BootNext workflow in `docs/research/host-fancy.adoc`; preserve Ubuntu/Slim as the default. Windows lab tests use a routing fixture; see `docs/research/validation.adoc` for validation limits.
 
 ## Build, test, and development commands
 
@@ -42,6 +43,14 @@ See the README for setup and verified commands.
 - `make host-stage` builds Slim artwork for the host's existing clean menu.
 - `make host-install` backs up and updates the existing host theme with sudo.
 - `make host-rollback` restores the last host theme backup and refreshes GRUB.
+- `make host-fancy-stage` builds an isolated EFI trial for the inspected Ubuntu 26.04 host.
+- `make host-fancy-check` checks that image in disposable Secure Boot QEMU firmware.
+- `make host-fancy-benchmark` measures VM rendering and checks shortcuts, gate activation, and the full countdown.
+- `make host-fancy-demo` records left/right/left movement and Linux fixture selection as a GIF and extracts a still.
+- `make host-fancy-install` installs a separate EFI entry without selecting it.
+- `make host-fancy-enroll` requests image hash enrollment through MokManager.
+- `make host-fancy-once` arms an enrolled image for one boot only.
+- `make host-fancy-remove` removes the separate trial entry and files.
 - `make native-build` builds the module against the matching Ubuntu source.
 - `make fancy` builds and selects the custom EFI preview in the guest.
 - `make boot-test` runs the keyboard and boot regression checks.

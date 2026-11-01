@@ -210,17 +210,22 @@ def send_key(name):
 
 
 def type_text(value):
+    with QMP() as monitor:
+        type_keys(monitor, value)
+
+
+def type_keys(monitor, value):
+    """Type through an existing QMP connection, preserving keyboard timing."""
     punctuation = {" ": "spc", "-": "minus", "=": "equal", "/": "slash",
                    ".": "dot", "\n": "ret", "_": "shift-minus", ":": "shift-semicolon",
                    "(": "shift-9", ")": "shift-0", "$": "shift-4"}
-    with QMP() as monitor:
-        for char in value:
-            name = punctuation.get(char, char.lower())
-            if char.isupper():
-                name = "shift-" + name
-            monitor.command("send-key", {"keys": [{"type": "qcode", "data": part}
-                                                    for part in name.split("-")], "hold-time": 10})
-            time.sleep(0.06)
+    for char in value:
+        name = punctuation.get(char, char.lower())
+        if char.isupper():
+            name = "shift-" + name
+        monitor.command("send-key", {"keys": [{"type": "qcode", "data": part}
+                                                for part in name.split("-")], "hold-time": 10})
+        time.sleep(0.06)
 
 
 def screenshot(path=None):

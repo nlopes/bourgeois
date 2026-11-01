@@ -17,6 +17,15 @@ Development targets Ubuntu 24.04 x86_64 UEFI in a disposable QEMU guest.
 Add implementation directories when needed, and document their purpose here.
 Keep the README focused on the project and its setup.
 
+## Implementation constraints
+
+- Preserve GRUB's native boot commands, entry IDs, authentication, and recovery paths. Generate boot entries from the distribution configuration.
+- Slim keeps the distribution EFI binary unchanged. Use lowercase `l`/`w` to select a door by switching themes and Space to enter it. Keep the static hero and no visible menu list.
+- Fancy uses a native module in a separate EFI image. Left/Right walks; Space enters only at a gate; L/W boots immediately.
+- Keep Linux and Windows as the two OS choices. Default to Linux after 30 seconds, cancel the timer on input, and keep Esc as the route to the technical menu.
+- Keep the shared stone nameplates in the background artwork and the title and controls transparent. See `assets/README.adoc` for asset sources.
+- Install previews only in the disposable lab guest. Windows tests use a routing fixture; see `docs/research/validation.adoc` for validation limits.
+
 ## Build, test, and development commands
 
 Use Python 3.11 or newer, a C compiler, Make, QEMU, xorriso, and OpenSSH.
@@ -53,6 +62,8 @@ Python tests use `unittest` and live beside the code as `*_test.py`.
 For documentation changes, check spelling, markup, referenced paths, and command accuracy.
 
 When adding behavior, include appropriate tests and a reproducible test command. Name tests after the behavior they verify, and add regression coverage for bug fixes.
+Run only one boot-test process against the VM at a time.
+For rendering or input changes, inspect actual GRUB captures as well as the automated results; see `docs/research/preview.adoc`.
 
 ## Commit and pull request guidelines
 

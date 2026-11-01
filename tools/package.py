@@ -31,7 +31,8 @@ def package():
         for name in ('assets', 'tools', 'docs'):
             shutil.copytree(lab.ROOT / name, stage / name, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
         theme.build(stage / 'theme')
-        for asset in ('courtyard.png', 'courtyard-nameplates.png', 'traveler.png'):
+        for asset in ('courtyard.png', 'courtyard-nameplates.png', 'traveler.png',
+                      'traveler-idle-left.png', 'traveler-idle-right.png'):
             shutil.copyfile(lab.ROOT / 'assets' / asset, stage / 'theme' / asset)
         # Both source archives carry the controller tests used by make test.
         shutil.copytree(lab.ROOT / 'fancy', stage / 'fancy')

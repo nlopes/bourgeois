@@ -13,10 +13,12 @@ It does not install or boot Windows.
 The generator reads Ubuntu's current `grub.cfg` after `update-grub`.
 It keeps support commands and the selected entry bodies.
 It changes each selected title and hotkey while retaining its ID, classes, and authentication options.
-It removes other menu blocks from the nested slim scene.
+It removes other menu blocks from the nested slim configuration.
 A `true` command replaces removed blocks so enclosing conditionals remain valid GRUB syntax.
 Missing, duplicate, unsafe, and nested submenu IDs fail generation.
 `grub-script-check` validates both the scene and the parent configuration before use.
+One generated file contains both the selector and the two native boot entries in separate conditional branches.
+Kernel updates replace that file atomically.
 
 The parent retains Ubuntu's advanced kernels, recovery entries, editor, and command line.
 The hook runs after menu entries have been defined.
@@ -33,14 +35,18 @@ A returned boot failure stays in the native menu and does not re-run the scene.
 Both editions use `courtyard-nameplates.png`, which has raised masonry and recessed stone-framed nameplates based on the original concept.
 The OS names are part of that artwork; GRUB does not draw name labels over the gates.
 
-Slim uses stock `boot_menu`, `label`, and `circular_progress` facilities.
+Slim uses stock `label`, `image`, and `circular_progress` facilities, with no visible menu list.
 Its sand image is static; the ring and seconds label reflect GRUB's live timer.
-The title, menu, and controls have transparent backgrounds and dark text shadows.
-A small gold pointer marks the selected OS without filling the menu row.
-An offset copy of the native menu draws its text shadow and follows the same selection.
+The title and controls have transparent backgrounds and dark text shadows.
 GRUB paints the theme canvas in reverse declaration order, so shadow components follow the text they back.
-Up/Down and Enter use GRUB's normal behavior.
-The letter shortcuts are the native lowercase `l` and `w` hotkeys.
+The lowercase `l` and `w` hotkeys execute unrestricted selection actions, which set the chosen OS ID and switch the theme path.
+They do not load a kernel or chainloader, or create another menu context.
+Each theme draws a static hero at its door and identifies the Space action.
+Space is a literal single-character hotkey on the enter action; Enter also executes this default action.
+That action loads the same generated file in boot mode, where GRUB executes the preserved OS entry with its original authentication.
+A returned boot attempt stays in that native boot menu until the user leaves it.
+Selecting a door cancels the timer through GRUB's normal input handling and never restarts it.
+The unused stock menu navigation keys remain native GRUB controls; only L/W and Space are advertised for this scene.
 
 Fancy owns a polling loop through GRUB's terminal input API.
 A Left or Right press selects a walking destination; the character completes the walk without requiring key release events.

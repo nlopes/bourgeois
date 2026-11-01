@@ -23,7 +23,7 @@ The automatic countdown starts at 30 seconds when the selection screen is ready.
 With no input, Linux boots at zero.
 
 Any key cancels automatic boot for that visit to the screen.
-L or W also boots its corresponding OS immediately.
+L or W selects a door in slim and boots its corresponding OS immediately in fancy.
 Navigating does not restart the timer or allow an automatic Linux boot while the user is choosing Windows.
 This follows normal GRUB menu timeout behavior and is the proposed behavior for the module too.
 If the timer is cancelled, the slim native timeout components disappear.
@@ -32,13 +32,15 @@ The fancy edition can replace its timer with a manual-selection label.
 == Slim edition
 
 Use the installed distribution GRUB binary with theme assets and supported configuration changes.
-Use a scenic background and a native `boot_menu` with two vertically stacked entries.
-A traveler, if present, is decorative static artwork.
+Use a scenic background with a static traveler at the selected door.
+Two theme files place the traveler at the Linux or Windows gate.
 The gates in the artwork are not independent interactive widgets.
 
-Use Up/Down to select and Enter to boot.
-Keep L/W as direct boot hotkeys.
-Space and walking are not available in this edition.
+Use lowercase L/W to select a door and Space to enter it.
+Native hotkeys execute selection entries that change the selected OS ID and theme path.
+A literal Space hotkey executes the enter action, which opens the preserved native boot entry.
+Selecting does not nest another menu, so repeated switches keep Esc one level from the technical menu.
+Walking is not available in this edition.
 
 The hourglass is a static image surrounded by a native `circular_progress` countdown with 30 ticks and `ticks_disappear` enabled.
 Register the progress component and a seconds label with the special `__timeout__` ID.
@@ -47,12 +49,13 @@ GRUB updates the ring and label once per second.
 The sand inside the slim hourglass does not animate.
 The three timer illustrations show full, half, and empty rings with unchanged hourglass artwork.
 
-To preserve Esc as the route to technical options, place the two-choice themed menu in a nested configuration loaded with `configfile`.
+To preserve Esc as the route to technical options, place the two-door scene in a nested configuration loaded with `configfile`.
 Esc exits that nested menu and reveals the parent technical menu with no countdown.
 The parent retains the existing advanced Linux and recovery entries.
 A theme applied only to a top-level menu cannot redefine Esc this way.
 The nested configuration therefore belongs to the slim package alongside the theme assets.
 Generate its two boot definitions from the same distribution-specific source as the regular entries, so kernel updates refresh both configurations.
+Keep the selector and boot definitions in separate branches of the same generated file for atomic refresh.
 Do not maintain a second handwritten set of kernel paths.
 The exact generation hook remains dependent on the first supported distribution.
 

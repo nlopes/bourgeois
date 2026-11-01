@@ -35,9 +35,9 @@ The tools register a separate `bourgeois preview` EFI entry inside the lab VM.
 [cols="1,2,2",options="header"]
 |===
 |Action |Slim |Fancy
-|Move or choose |Up/Down selects a menu row |Left/Right walks to a gate
-|Boot chosen OS |Enter |Space at a gate
-|Boot immediately |`l` / `w` |`l` / `w`, also uppercase
+|Move or choose |`l` / `w` snaps the hero to a door |Left/Right walks to a gate
+|Boot chosen OS |Space, or Enter |Space at a gate
+|Boot immediately |Space at the selected door |`l` / `w`, also uppercase
 |Technical menu |Esc |Esc
 |Timer |Any input cancels |Any input cancels
 |===
@@ -81,6 +81,7 @@ make dist
 `make boot-test` restarts the configured VM and sends real keyboard events.
 It tests cancellation, shortcuts, Esc tools, and automatic Linux boot.
 Fancy also tests walking and reversal.
+Slim also tests repeated door selection without booting and a single Esc after switching.
 `python3 tools/boot_test.py fallbacks` checks fancy's asset, module, ID, and display-mode fallbacks.
 Inspect the captured editor, command-line, and fallback screenshots as part of review.
 Do not run two boot-test processes against the same VM.

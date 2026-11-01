@@ -43,7 +43,7 @@ Set `BOURGEOIS_FIRMWARE_VARS` for a matching variables template in a custom loca
 
 == Slim preview
 
-Prepare the two-entry menu inside the running guest:
+Prepare the two-door scene inside the running guest:
 
 [source,shell]
 ----
@@ -53,8 +53,10 @@ python3 tools/lab.py key esc
 ----
 
 Wait for the scene before sending keys.
-Up/Down selects an entry and Enter boots it.
-`l` and `w` boot immediately; Esc returns to Ubuntu's technical menu.
+`l` and `w` place the hero at the Linux or Windows door.
+Space enters the selected door; Enter also works.
+The hero snaps between the doors without a walking animation.
+Esc returns to Ubuntu's technical menu.
 Any input cancels the 30-second automatic Linux boot.
 The Windows choice is a routing fixture that prints a marker and returns.
 The hourglass image is static in slim; its surrounding ring and seconds label count down.

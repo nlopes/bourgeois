@@ -67,7 +67,8 @@ EOF
     ):
         (STAGE / f'test-{name}.cfg').write_text(source + modified)
     theme.build(STAGE)
-    for asset in ('courtyard.png', 'courtyard-nameplates.png', 'traveler.png'):
+    for asset in ('courtyard.png', 'courtyard-nameplates.png', 'traveler.png',
+                  'traveler-idle-left.png', 'traveler-idle-right.png'):
         shutil.copyfile(lab.ROOT / 'assets' / asset, STAGE / asset)
     upload(STAGE, '/home/bourgeois/preview')
     lab.ssh('sudo grub-script-check /home/bourgeois/preview/scene.cfg && sudo mkdir -p /boot/grub/bourgeois && sudo cp /home/bourgeois/preview/* /boot/grub/bourgeois/')

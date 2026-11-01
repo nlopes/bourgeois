@@ -27,14 +27,14 @@ GRUB would continue to load Linux and chain-load Windows through its existing me
 This extends GRUB's presentation and input handling; it does not introduce another bootloader.
 
 If the requirement is to install only a theme on an unchanged distribution GRUB, the complete interaction is out of scope.
-That version could provide illustrated scenery, a styled menu, and Linux/Windows hotkeys, but would retain normal menu navigation.
+That version can provide illustrated scenery, static door selection, and Linux/Windows hotkeys through configuration scripts.
 A decorative character could not actually walk under theme control.
 
 == Evidence and limits
 
 I read the GNU GRUB 2.14 user manual, developer manual, and the official 2.14 source release.
-The target machine's distribution build has not been identified or tested.
-The feasibility conclusion comes from source inspection, not a running boot prototype.
+The initial feasibility conclusion came from source inspection.
+The later Ubuntu 24.04 GRUB 2.12 prototype and checked controls are recorded in xref:validation.adoc[the validation record].
 
 The theme file describes components and appearance.
 Its components include labels, images, progress indicators, a boot menu list, and layout containers.
@@ -50,6 +50,20 @@ The source confirms the input boundary:
 * Esc exits a nested menu; at the top level it does not open an editing panel.
 * `include/grub/menu_viewer.h` exposes selection, timeout, and finalization callbacks, but no general input callback or frame callback.
 * A new viewer or theme component alone would not intercept the required controls.
+
+=== Static door selection through configuration
+
+Stock GRUB can still provide a simpler two-state interaction without a custom module.
+The `l` and `w` menu hotkeys execute non-booting actions that change the selected OS ID and theme path.
+The menu reloads that theme after the action returns, placing a static hero at the chosen gate.
+No menu list needs to be drawn by the theme.
+The enter action uses `--hotkey=' '`: the hotkey parser accepts the first character literally, including Space.
+Space is not a named hotkey alias or a built-in selected-entry action.
+The enter action opens the generated configuration in boot mode, where the selected native OS entry retains its commands and authentication.
+This behavior was tested in Ubuntu's unchanged GRUB `2.12-1ubuntu7.3` binary.
+It provides snapping between doors, not continuous movement or arbitrary input callbacks.
+
+=== Native module facilities
 
 GRUB does expose the lower-level facilities needed for a native module:
 

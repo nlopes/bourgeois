@@ -46,6 +46,13 @@ static void
 label (const char *text, int center, int y, int gold)
 {
   int text_width = grub_font_get_string_width (font, text);
+  int dx, dy;
+  /* The scene remains visible behind the text. A dark outline keeps glyphs
+     readable over both lit stone and foliage. */
+  for (dy = -1; dy <= 1; dy += 2)
+    for (dx = -1; dx <= 1; dx += 2)
+      grub_font_draw_string (text, font, grub_video_map_rgb (24, 19, 22),
+                             center - text_width / 2 + dx, y + dy);
   grub_font_draw_string (text, font,
                         gold ? grub_video_map_rgb (250, 221, 165)
                              : grub_video_map_rgb (208, 215, 209),
@@ -53,31 +60,117 @@ label (const char *text, int center, int y, int gold)
 }
 
 static void
-hourglass (struct scene_state *s)
+gate_sign (const char *text, int center, int y, int selected)
 {
-  int x = width - 84, y = 42, row;
-  int used = (30000 - s->remaining) * 20 / 30000;
-  rect (x - 18, y - 14, 72, 116, 22, 30, 39);
-  rect (x, y, 36, 5, 203, 160, 94);
-  rect (x, y + 60, 36, 5, 203, 160, 94);
-  for (row = 0; row < 27; row++)
+  int w = grub_font_get_string_width (font, text) + 52;
+  int x = center - w / 2, i;
+  /* Short chains fasten the board above the doorway. */
+  for (i = -1; i <= 1; i += 2)
     {
-      int half = 16 - row / 2;
-      rect (x + 18 - half, y + 5 + row, 2, 1, 148, 189, 198);
-      rect (x + 18 + half, y + 5 + row, 2, 1, 148, 189, 198);
-      rect (x + 18 - half, y + 59 - row, 2, 1, 148, 189, 198);
-      rect (x + 18 + half, y + 59 - row, 2, 1, 148, 189, 198);
-      if (row >= used && row < 24)
-        rect (x + 21 - half, y + 6 + row, 2 * half - 4, 1, 234, 186, 105);
-      if (row < used)
-        rect (x + 21 - half, y + 58 - row, 2 * half - 4, 1, 234, 186, 105);
+      int chain = center + i * (w / 2 - 22);
+      rect (chain - 1, y - 15, 4, 18, 38, 27, 27);
+      rect (chain, y - 15, 1, 18, 185, 146, 88);
+      rect (chain + 1, y - 12, 1, 3, 109, 84, 54);
+      rect (chain + 1, y - 6, 1, 3, 109, 84, 54);
+    }
+  /* Stepped ends, a bevel, and grain give the board a carved silhouette. */
+  rect (x + 4, y + 3, w - 8, 38, 33, 23, 23);
+  rect (x, y + 7, w, 28, 33, 23, 23);
+  rect (x + 5, y, w - 10, 36, 63, 39, 29);
+  rect (x + 2, y + 4, w - 4, 28, 63, 39, 29);
+  rect (x + 5, y + 2, w - 10, 2, selected ? 239 : 168,
+        selected ? 199 : 116, selected ? 115 : 64);
+  rect (x + 6, y + 5, w - 12, 26, 94, 58, 36);
+  rect (x + 7, y + 7, w - 14, 2, 113, 72, 42);
+  rect (x + 7, y + 27, w - 14, 2, 73, 43, 30);
+  for (i = 0; i < 7; i++)
+    {
+      int start = 13 + (i * 29) % (w - 48);
+      rect (x + start, y + 10 + (i * 7) % 16, 12 + i % 3 * 4, 1,
+            108, 66, 38);
+    }
+  for (i = -1; i <= 1; i += 2)
+    {
+      int pin = center + i * (w / 2 - 13);
+      rect (pin - 2, y + 15, 5, 5, 46, 30, 25);
+      rect (pin - 1, y + 15, 3, 3, 193, 145, 76);
+      rect (pin - 1, y + 15, 1, 1, 246, 211, 136);
+    }
+  label (text, center, y + 23, 1);
+}
+
+static int
+glass_half_width (int row)
+{
+  return 3 + 17 * (28 - row) * (28 - row) / (28 * 28);
+}
+
+static void
+hourglass (struct scene_state *s, grub_uint64_t now)
+{
+  int x = width - 66, y = 32, row, side, total = 0, remaining, fallen;
+  /* Draw the frame without a backing panel, so its open areas show the sky. */
+  for (side = -1; side <= 1; side += 2)
+    {
+      int post = x + side * 27;
+      rect (post - 3, y + 6, 7, 76, 43, 29, 24);
+      rect (post - 1, y + 8, 3, 72, 139, 93, 48);
+      rect (post - 1, y + 8, 1, 72, 218, 172, 97);
+      rect (post - 3, y + 12, 7, 4, 194, 143, 72);
+      rect (post - 3, y + 72, 7, 4, 194, 143, 72);
+    }
+  for (row = 0; row < 28; row++)
+    {
+      int half = glass_half_width (row);
+      total += 2 * half - 3;
+      for (side = -1; side <= 1; side += 2)
+        {
+          int edge = x + side * half;
+          rect (edge - 1, y + 13 + row, 3, 1, 32, 44, 53);
+          rect (edge - 1, y + 71 - row, 3, 1, 32, 44, 53);
+          rect (edge, y + 13 + row, 1, 1, 157, 200, 201);
+          rect (edge, y + 71 - row, 1, 1, 117, 167, 177);
+        }
+    }
+  /* Fill by pixel area rather than height to keep both bulbs in step. */
+  remaining = total * s->remaining / 30000;
+  fallen = total - remaining;
+  for (row = 27; row >= 0; row--)
+    {
+      int span = 2 * glass_half_width (row) - 3;
+      int fill = remaining < span ? remaining : span;
+      if (fill)
+        rect (x - fill / 2, y + 13 + row, fill, 1, 234, 184, 93);
+      remaining -= fill;
+    }
+  for (row = 0; row < 28; row++)
+    {
+      int span = 2 * glass_half_width (row) - 3;
+      int fill = fallen < span ? fallen : span;
+      if (fill)
+        rect (x - fill / 2, y + 71 - row, fill, 1, 219, 155, 65);
+      fallen -= fill;
+      if (!s->cancelled && fallen == 0 && row > 2)
+        break;
     }
   if (!s->cancelled)
-    rect (x + 18, y + 32, 2, 20 - used / 2, 234, 186, 105);
+    for (row = 0; row < 4; row++)
+      rect (x, y + 42 + (row * 6 + now / 100) % 24, 1, 2, 250, 213, 132);
+  rect (x - 2, y + 40, 1, 4, 157, 200, 201);
+  rect (x + 2, y + 40, 1, 4, 117, 167, 177);
+  for (row = 0; row < 2; row++)
+    {
+      int base = y + row * 78;
+      rect (x - 31, base + 2, 63, 8, 40, 27, 25);
+      rect (x - 29, base, 59, 8, 98, 57, 34);
+      rect (x - 28, base + 1, 57, 2, 218, 172, 97);
+      rect (x - 25, base + 4, 51, 2, 157, 107, 55);
+      rect (x - 24, base + 6, 49, 1, 65, 40, 29);
+    }
   {
     char text[24];
     grub_snprintf (text, sizeof text, "%ds", (s->remaining + 999) / 1000);
-    label (s->cancelled ? "PAUSED" : text, x + 18, y + 88, 1);
+    label (s->cancelled ? "PAUSED" : text, x, y + 108, 1);
   }
 }
 
@@ -180,13 +273,10 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       if (action != SCENE_WAIT)
         break;
       grub_video_blit_bitmap (background, GRUB_VIDEO_BLIT_REPLACE, 0, 0, 0, 0, width, height);
-      rect (width / 2 - 190, 24, 380, 60, 22, 30, 39);
       label ("CHOOSE YOUR KINGDOM", width / 2, 49, 1);
       label ("A journey begins with a door", width / 2, 72, 0);
-      rect (width / 5 - 70, height * 28 / 100, 140, 32, 22, 30, 39);
-      rect (width * 4 / 5 - 78, height * 28 / 100, 156, 32, 22, 30, 39);
-      label ("LINUX  [L]", width / 5, height * 28 / 100 + 22, 1);
-      label ("WINDOWS  [W]", width * 4 / 5, height * 28 / 100 + 22, 1);
+      gate_sign ("LINUX  [L]", width / 5, height * 28 / 100, state.x == 480);
+      gate_sign ("WINDOWS  [W]", width * 4 / 5, height * 28 / 100, state.x == 1920);
       {
         int frame = state.x != state.target ? (now / 140) % 4 : 0;
         grub_video_blit_bitmap (state.target < state.origin ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
@@ -194,13 +284,12 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
                                 height * 73 / 100 - frame_height,
                                 frame * frame_width, 0, frame_width, frame_height);
       }
-      rect (width / 2 - 310, height - 115, 620, 94, 22, 30, 39);
       label (state.x == 480 ? "Space: enter Linux" : state.x == 1920 ? "Space: enter Windows"
              : "Left / Right: walk to a gate", width / 2, height - 88, 1);
       label ("L/W: boot now    Esc: technical menu", width / 2, height - 62, 0);
       label (state.cancelled ? "Auto-boot cancelled for this visit"
              : "Linux boots when the sand runs out", width / 2, height - 36, 0);
-      hourglass (&state);
+      hourglass (&state, now);
       grub_video_swap_buffers ();
       {
         unsigned elapsed = grub_get_time_ms () - now;

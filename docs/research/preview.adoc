@@ -6,6 +6,9 @@ Use Python 3.11 or newer, a C compiler, Make, QEMU, xorriso, and OpenSSH.
 Start with `make vm` and `python3 tools/lab.py wait`.
 The first native build also installs Ubuntu build dependencies and downloads the matching GRUB source inside the guest.
 It takes longer under x86 software emulation on an ARM Mac.
+`make lab-preflight` checks QEMU, xorriso, OpenSSH, and Python before starting the VM or native tools.
+Missing tools produce Ubuntu/macOS package hints; an uninitialized or stopped guest produces a `make vm` instruction.
+Fancy's fonts are generated inside the guest; the native build installs its font package there.
 
 == Editions
 
@@ -29,15 +32,19 @@ The tools register a separate `bourgeois preview` EFI entry inside the lab VM.
 `make fancy` puts it first in the guest boot order.
 `make slim` selects Ubuntu's original EFI entry.
 `reset` performs a cold VM restart with the selected guest boot order.
+Fancy inherits the distribution's `gfxmode`; `bourgeois_gfxmode` remains its explicit GRUB override.
+Text and the freestanding hourglass scale with the actual mode, while walking, gate prompts, and the animated sand retain their behavior.
+On return, Fancy restores a full-screen terminal and the courtyard background for boot messages.
+The GPU advisor under <<host-gpus>> applies to either edition and only prints setup guidance.
 
 == Controls
 
 [cols="1,2,2",options="header"]
 |===
 |Action |Slim |Fancy
-|Move or choose |`l` / `w` snaps the hero to a door |Left/Right walks to a gate
-|Boot chosen OS |Space, or Enter |Space at a gate
-|Boot immediately |Space at the selected door |`l` / `w`, also uppercase
+|Move or choose |Up/Down selects a menu row |Left/Right walks to a gate
+|Boot chosen OS |Enter |Space at a gate
+|Boot immediately |`l` / `w` in the lab preview |`l` / `w`, also uppercase
 |Technical menu |Esc |Esc
 |Timer |Any input cancels |Any input cancels
 |===
@@ -181,13 +188,15 @@ make dist
 `make boot-test` restarts the configured VM and sends real keyboard events.
 It tests cancellation, shortcuts, Esc tools, and automatic Linux boot.
 Fancy also tests walking and reversal.
-Slim also tests repeated door selection without booting and a single Esc after switching.
+The Windows fixture captures the courtyard during Fancy's boot handoff.
 `python3 tools/boot_test.py fallbacks` checks fancy's asset, module, ID, and display-mode fallbacks.
+Its 2560x1440 case checks inheritance from `gfxmode`, alongside the smaller explicit modes.
 Inspect the captured editor, command-line, and fallback screenshots as part of review.
 Do not run two boot-test processes against the same VM.
 
 `make dist` creates slim and fancy preview archives and `SHA256SUMS` under `build/dist/`.
 `make native-build` caches the matching upstream source archives on the host.
+It also caches the scaled Fancy fonts for packaging.
 Packaging uses those cached files and does not need a running guest.
 The fancy archive includes the custom EFI file, the original module source, build scripts, and Ubuntu's corresponding GRUB source archives.
 The EFI file embeds the lab's filesystem UUID and must be rebuilt for a different disk.

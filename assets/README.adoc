@@ -6,10 +6,25 @@
 These images were generated with the built-in imagegen tool for this project.
 The prompts are preserved in xref:courtyard.prompt.txt[courtyard.prompt.txt], xref:courtyard-nameplates.prompt.txt[courtyard-nameplates.prompt.txt], and xref:traveler.prompt.txt[traveler.prompt.txt].
 The nameplate background uses the original courtyard as the edit target and the xref:../docs/research/mockups/adventure-concept.png[original concept] as its stonework reference.
-The PNGs are kept without post-processing.
+The generated backgrounds and walking strip are kept without post-processing.
 GRUB scales them at runtime.
 The optional host theme builder extracts the first traveler cell and places it in transparent class icons at the two door positions.
 It mirrors the Linux pose and leaves these original PNGs unchanged.
+
+`traveler-idle-left.png` and `traveler-idle-right.png` are 64 by 102 pixel stills from the earlier door-only Slim prototype.
+They remain as research assets; the current host theme generates its class icons directly from `traveler.png`.
+They use the first frame of `traveler.png`, resized and mirrored for the two doors.
+They add no new generated artwork.
+The source crop starts at column 1 and covers 495 by 793 pixels.
+The one-pixel offset avoids macOS `sips` treating a zero crop offset as a centered crop.
+These commands reproduce the stills on macOS:
+
+[source,shell]
+----
+sips --cropToHeightWidth 793 495 --cropOffset 0 1 assets/traveler.png --out build/traveler-idle.png
+sips --resampleHeightWidth 102 64 build/traveler-idle.png --out assets/traveler-idle-right.png
+sips --flip horizontal assets/traveler-idle-right.png --out assets/traveler-idle-left.png
+----
 
 Both courtyard backgrounds are 1672 by 941 pixels.
 The traveler strip is 1983 by 793 pixels with four equal logical cells.
@@ -26,3 +41,5 @@ The optional host builder converts the system's DejaVu Sans Mono to an ASCII GRU
 It scales the menu, ornaments, and font for the requested display height.
 `DejaVu-font-license.txt` contains the distribution's font notices and is copied beside the generated `menu.pf2`.
 These font notices apply separately from the project artwork's MIT license.
+The Fancy native build generates the same font family in six sizes inside the Ubuntu guest.
+Its preview and distribution archive include those PF2 files and the same notices.

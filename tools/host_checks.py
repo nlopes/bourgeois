@@ -1,4 +1,4 @@
-"""Actionable dependency checks for the optional host tools."""
+"""Actionable dependency checks for host artwork and the disposable lab."""
 import argparse
 import importlib.util
 from pathlib import Path
@@ -15,6 +15,13 @@ class HostSetupError(RuntimeError):
 def missing_tools(operation, *, include_sudo=False, which=None, pillow=None, font=FONT):
     which = which or shutil.which
     issues = []
+    if operation == 'lab':
+        absent = [name for name in ('qemu-system-x86_64', 'qemu-img', 'xorriso', 'ssh', 'ssh-keygen')
+                  if not which(name)]
+        if absent:
+            issues.append(f'Missing {", ".join(absent)}. On Ubuntu: sudo apt install '
+                          'qemu-system-x86 qemu-utils ovmf xorriso openssh-client. '
+                          'On macOS: brew install qemu xorriso; OpenSSH must also be available.')
     if operation in ('stage', 'all'):
         if pillow is None:
             pillow = importlib.util.find_spec('PIL') is not None
@@ -42,7 +49,7 @@ def require_tools(operation, **kwargs):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=('stage', 'install', 'all'))
+    parser.add_argument('operation', choices=('stage', 'install', 'all', 'lab'))
     parser.add_argument('--sudo', action='store_true', help='also require the sudo command')
     args = parser.parse_args()
     try:

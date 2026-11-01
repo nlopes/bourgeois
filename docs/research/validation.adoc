@@ -32,14 +32,19 @@ The slim keyboard suite also passed an untouched 30-second Linux boot, L and W r
 Its technical menu, entry editor, command line, and returned Windows fixture were captured and visually inspected.
 The full slim suite passed again after switching to the shared nameplate artwork.
 It also passed after removing the title, menu, and control backing panels.
+An earlier door-only Slim prototype also passed six cases.
+They covered cancellation, repeated L/W selection without booting, single-Esc recovery after switching, the editor and command line, Space activation of both OS choices, and the untouched Linux timer.
+The Windows fixture returned to a readable native two-entry boot menu.
 
-image::mockups/fancy-runtime.png[Fancy GRUB at 15 seconds remaining,width=1280]
+image::mockups/fancy-runtime.png[Fancy GRUB at 2560x1440 with scaled UI and 15 seconds remaining,width=1280]
 
-image::mockups/fancy-windows-gate.png[The traveler at the Windows gate with the Space prompt,width=1280]
+image::mockups/fancy-windows-gate.png[The traveler at the Windows gate with the Space prompt at 2560x1440,width=1280]
 
-image::mockups/slim-runtime.png[Stock Ubuntu GRUB with the courtyard and native countdown,width=1280]
+image::mockups/slim-runtime.png[Earlier door-only Slim prototype with the courtyard and native countdown,width=1280]
 
-image::mockups/slim-windows-selected.png[Stock Ubuntu GRUB with Windows selected and transparent menu rows,width=1280]
+image::mockups/slim-windows-selected.png[Earlier door-only Slim prototype with the hero at the Windows door,width=1280]
+
+image::mockups/slim-linux-selected.png[Earlier door-only Slim prototype after switching the hero back to the Linux door,width=1280]
 
 image::mockups/technical-menu.png[Ubuntu's technical menu after Esc,width=800]
 
@@ -49,8 +54,11 @@ Both editions show recessed architectural nameplates from `courtyard-nameplates.
 Fancy also has a freestanding hourglass.
 The stone surrounds and lettering are part of the background artwork, following the original concept.
 Fancy's title and help text use dark outlines, with the courtyard visible behind them.
-The earlier Slim capture used text shadows and transparent backgrounds for its title, menu, countdown label, and controls.
+The earlier menu-based Slim capture used text shadows and transparent backgrounds for its title, menu, countdown label, and controls.
 Both selected rows were visually inspected, including the gold pointer at Windows.
+The separate door-only prototype used two static hero positions and a contextual Space prompt.
+Both of its door states were visually inspected in the unchanged Ubuntu GRUB binary.
+The current compact menu and host theme are recorded below.
 The live countdown was inspected at 30 and 15 seconds, with no backing panels.
 After replacing the font labels with architectural artwork, the untouched timer, walking, reversal, Space at the Windows gate, Esc menu, and command line were checked again.
 The missing-background check returned to a readable technical menu.
@@ -82,6 +90,35 @@ It excludes framebuffer storage, fonts, PNG decoder work space, and transient so
 This is not a measurement of total GRUB heap use.
 640x480 is rejected and returns to the technical menu.
 
+== Fancy shared fixes on the Linux host
+
+The native module was rebuilt against the pinned Ubuntu GRUB `2.12-1ubuntu7.3` source in a fresh disposable guest.
+This additional run used Ubuntu 26.04.1 and QEMU 10.2.1 with x86 software emulation.
+`make native-build`, `make fancy`, `make boot-test`, and the explicit fallback suite completed successfully.
+The keyboard suite checked cancellation beyond 30 seconds, walking and reversal, Space at the Windows gate, both shortcuts, Esc tools, and the untouched Linux timer.
+Linux booted successfully by shortcut and after the 30-second countdown.
+The Windows route remains a routing fixture.
+
+Fallbacks covered missing artwork, missing module, missing ID, unsupported 640x480, failed-boot state, and one-shot selection.
+Rendering checks asserted the actual screenshot dimensions at 800x600, 1024x768, and inherited 2560x1440.
+The high-resolution case uses `gfxmode=2560x1440,auto` with no Fancy override.
+An additional 1440p check captured the live sand at 15 seconds, walked to Windows and used Space, and then booted Linux by shortcut at the same mode.
+The 1440p UI uses the 40-pixel font and a doubled hourglass while retaining Fancy's composition and interactions.
+The courtyard remains visible behind the fixture's boot message at both small and 1440p modes.
+The earliest 1440p screenshot caught an incomplete repaint; captures from 0.3 through 2 seconds showed the complete courtyard.
+The handoff harness allows the first repaint to finish before recording its evidence.
+The original Ubuntu EFI digest still matches the one recorded above.
+The custom EFI digest matches the locally built image, and the guest's compiled C source matches the repository.
+
+`make test` passes 54 Python tests plus the C controller and layout tests.
+The layout tests cover small displays, 1440p, 4K, narrow modes, and the font-size cap.
+Only the listed rendering modes were boot-tested; the layout calculations alone do not validate a firmware mode.
+The Fancy archive was checked for all six generated fonts, their notices, and the new layout source.
+The physical host continues using signed stock GRUB and Slim.
+These checks do not validate native Fancy installation or Secure Boot signing on the host.
+
+image::mockups/fancy-handoff.png[Fancy's full-screen courtyard behind a boot fixture message at 2560x1440,width=1280]
+
 == Validation limits
 
 An additional stock GRUB 2.14 UEFI rendering check on the Linux host reproduced the centered black handoff rectangle.
@@ -102,11 +139,11 @@ It spans x=1191 through x=1368 in both states: center x=1279.5 against screen ce
 The hero follows each selection without leaving its previous pose behind.
 Both the host 1280x720 theme and the base theme with the distribution font were also checked with both selections.
 The preceding countdown and courtyard handoff checks remain applicable; those components are unchanged by the compact layout.
-The Fancy resolution-inheritance change has not yet been rebuilt or boot-tested as a native EFI image.
+The Fancy resolution-inheritance change is now rebuilt and boot-tested in the disposable guest, as recorded above.
 Host-installer tests use temporary filesystem roots and simulated GRUB commands.
 They check complete backup restoration after generation and syntax-check failures, staging checksum rejection, symlink rejection, and kernel refresh on rollback.
 They do not run the privileged installer against the live host.
-`make test` passes 49 Python tests and the C controller tests.
+The shared test suite now passes 54 Python tests and the C controller/layout tests.
 The menu regression checks keep its width within 1.5 times the longest title at both host font sizes and keep its anchor centered.
 GPU tests cover both controller types, connector routing, ambiguous recommendations, explicit selection, missing sysfs, and optional `lspci` failure.
 Dependency tests cover missing packages and keep build-only requirements out of rollback.
@@ -132,4 +169,4 @@ Repeated packaging with the same inputs produced identical SHA256 checksums.
 Archive metadata uses fixed timestamps and owner IDs.
 Both archives include the generated theme, project source, and license notices.
 The fancy archive also includes the EFI image and matching Ubuntu GRUB source archives.
-The extracted slim archive passed all 18 Python tests and the standalone C controller checks.
+The archived door-only Slim package passed all 20 Python tests and the standalone C controller checks at that stage.

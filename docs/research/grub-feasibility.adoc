@@ -53,6 +53,9 @@ The source confirms the input boundary:
 
 === Static door selection through configuration
 
+This section records the earlier door-only prototype.
+The current Slim interface uses the compact native menu described in xref:implementation.adoc[the implementation notes].
+
 Stock GRUB can still provide a simpler two-state interaction without a custom module.
 The `l` and `w` menu hotkeys execute non-booting actions that change the selected OS ID and theme path.
 The menu reloads that theme after the action returns, placing a static hero at the chosen gate.

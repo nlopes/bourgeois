@@ -174,7 +174,15 @@ fi
         raise ValueError('Unknown edition')
     return common + f'''  insmod all_video
   insmod png
+  insmod gfxterm
+  insmod gfxterm_background
   loadfont unicode
+  if loadfont $prefix/bourgeois/menu-20.pf2; then
+    set gfxterm_font="Bourgeois UI Regular 20"
+    for size in 40 60 80 100 120; do
+      loadfont $prefix/bourgeois/menu-$size.pf2
+    done
+  fi
   set bourgeois_trace=1
   insmod bourgeois
   if [ "${{feature_bourgeois}}" = "1" ]; then

@@ -20,11 +20,11 @@ Keep the README focused on the project and its setup.
 ## Implementation constraints
 
 - Preserve GRUB's native boot commands, entry IDs, authentication, and recovery paths. Generate boot entries from the distribution configuration.
-- Slim keeps the distribution EFI binary unchanged. Use lowercase `l`/`w` to select a door by switching themes and Space to enter it. Keep the static hero and no visible menu list.
+- Slim keeps the distribution EFI binary unchanged. Use the compact two-entry menu with Up/Down and Enter. The lab's lowercase `l`/`w` shortcuts boot immediately; the host artwork follows the existing menu's controls and shows a static hero at the selected door.
 - Fancy uses a native module in a separate EFI image. Left/Right walks; Space enters only at a gate; L/W boots immediately.
 - Keep Linux and Windows as the two OS choices. Default to Linux after 30 seconds, cancel the timer on input, and keep Esc as the route to the technical menu.
-- Keep the shared stone nameplates in the background artwork and the title and controls transparent. See `assets/README.adoc` for asset sources.
-- Install previews only in the disposable lab guest. Windows tests use a routing fixture; see `docs/research/validation.adoc` for validation limits.
+- Keep the shared stone nameplates in the background artwork and preserve each edition's title, controls, and visual layout. See `assets/README.adoc` for asset sources.
+- Install development previews only in the disposable lab guest. Use the backed-up host installer for the existing Slim host theme. Windows lab tests use a routing fixture; see `docs/research/validation.adoc` for validation limits.
 
 ## Build, test, and development commands
 
@@ -33,7 +33,8 @@ See the README for setup and verified commands.
 
 - `make vm` starts the disposable Ubuntu guest.
 - `make screenshot` captures its display under `build/evidence/`.
-- `make test` runs the Python and C controller tests.
+- `make test` runs the Python tests and C controller/layout tests.
+- `make lab-preflight` checks the local VM tools and reports missing packages.
 - `make slim` installs the stock-binary theme in the guest.
 - `make host-doctor` checks host dependencies and reports graphics adapters without changes.
 - `make host-gpus` reports adapters and recommends a firmware display adapter.

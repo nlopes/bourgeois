@@ -8,6 +8,7 @@
 #include <grub/dl.h>
 #include <grub/env.h>
 #include <grub/font.h>
+#include <grub/gfxterm.h>
 #include <grub/gfxmenu_view.h>
 #include <grub/menu.h>
 #include <grub/misc.h>
@@ -18,10 +19,11 @@
 #include <grub/video.h>
 #include <grub/cpu/io.h>
 #include "state.h"
+#include "layout.h"
 
 GRUB_MOD_LICENSE ("GPLv3+");
 static grub_command_t command;
-static unsigned width, height;
+static unsigned width, height, ui_scale;
 static grub_font_t font;
 
 static void
@@ -39,7 +41,8 @@ trace (const char *message)
 static void
 rect (int x, int y, int w, int h, int r, int g, int b)
 {
-  grub_video_fill_rect (grub_video_map_rgb (r, g, b), x, y, w, h);
+  grub_video_fill_rect (grub_video_map_rgb (r, g, b), x * ui_scale,
+                        y * ui_scale, w * ui_scale, h * ui_scale);
 }
 
 static void
@@ -52,7 +55,8 @@ label (const char *text, int center, int y, int gold)
   for (dy = -1; dy <= 1; dy += 2)
     for (dx = -1; dx <= 1; dx += 2)
       grub_font_draw_string (text, font, grub_video_map_rgb (24, 19, 22),
-                             center - text_width / 2 + dx, y + dy);
+                             center - text_width / 2 + dx * (int) ui_scale,
+                             y + dy * (int) ui_scale);
   grub_font_draw_string (text, font,
                         gold ? grub_video_map_rgb (250, 221, 165)
                              : grub_video_map_rgb (208, 215, 209),
@@ -68,7 +72,7 @@ glass_half_width (int row)
 static void
 hourglass (struct scene_state *s, grub_uint64_t now)
 {
-  int x = width - 66, y = 32, row, side, total = 0, remaining, fallen;
+  int x = width / ui_scale - 66, y = 32, row, side, total = 0, remaining, fallen;
   /* Draw the frame without a backing panel, so its open areas show the sky. */
   for (side = -1; side <= 1; side += 2)
     {
@@ -130,7 +134,8 @@ hourglass (struct scene_state *s, grub_uint64_t now)
   {
     char text[24];
     grub_snprintf (text, sizeof text, "%ds", (s->remaining + 999) / 1000);
-    label (s->cancelled ? "PAUSED" : text, x, y + 108, 1);
+    label (s->cancelled ? "PAUSED" : text, x * ui_scale,
+           (y + 108) * ui_scale, 1);
   }
 }
 
@@ -190,9 +195,6 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
   if (argc != 4 || !has_entry (args[0]) || !has_entry (args[1])
       || grub_strcmp (args[0], args[1]) == 0)
     return grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: expected two unique entry IDs and two assets");
-  font = grub_font_get ("Unifont Regular 16");
-  if (!font)
-    return grub_error (GRUB_ERR_BAD_FONT, "bourgeois: load a font first");
   err = grub_video_set_mode (mode && *mode ? mode : "auto",
                             GRUB_VIDEO_MODE_TYPE_PURE_TEXT, 0);
   if (err)
@@ -204,6 +206,17 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       err = grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: display must be at least 800x600");
       goto done;
     }
+  ui_scale = scene_ui_scale (width, height);
+  {
+    char name[64];
+    grub_snprintf (name, sizeof name, "Bourgeois UI Regular %u", 20 * ui_scale);
+    font = grub_font_get (name);
+    if (!font)
+      {
+        err = grub_error (GRUB_ERR_BAD_FONT, "bourgeois: load a font first");
+        goto done;
+      }
+  }
   frame_height = height / 7;
   frame_width = frame_height * 5 / 8;
   if ((err = load_scaled (&background, args[2], width, height))
@@ -235,8 +248,8 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       if (action != SCENE_WAIT)
         break;
       grub_video_blit_bitmap (background, GRUB_VIDEO_BLIT_REPLACE, 0, 0, 0, 0, width, height);
-      label ("CHOOSE YOUR KINGDOM", width / 2, 49, 1);
-      label ("A journey begins with a door", width / 2, 72, 0);
+      label ("CHOOSE YOUR KINGDOM", width / 2, 49 * ui_scale, 1);
+      label ("A journey begins with a door", width / 2, 72 * ui_scale, 0);
       {
         int frame = state.x != state.target ? (now / 140) % 4 : 0;
         grub_video_blit_bitmap (state.target < state.origin ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
@@ -246,10 +259,10 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       }
       label (state.x == SCENE_LINUX_GATE_X ? "Space: enter Linux"
              : state.x == SCENE_WINDOWS_GATE_X ? "Space: enter Windows"
-             : "Left / Right: walk to a gate", width / 2, height - 88, 1);
-      label ("L/W: boot now    Esc: technical menu", width / 2, height - 62, 0);
+             : "Left / Right: walk to a gate", width / 2, height - 88 * ui_scale, 1);
+      label ("L/W: boot now    Esc: technical menu", width / 2, height - 62 * ui_scale, 0);
       label (state.cancelled ? "Auto-boot cancelled for this visit"
-             : "Linux boots when the sand runs out", width / 2, height - 36, 0);
+             : "Linux boots when the sand runs out", width / 2, height - 36 * ui_scale, 0);
       hourglass (&state, now);
       grub_video_swap_buffers ();
       {
@@ -278,11 +291,31 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
   grub_video_bitmap_destroy (background);
   if (active)
     {
+      char *console[] = { (char *) "console" };
       char *terminal[] = { (char *) "gfxterm" };
       grub_video_restore ();
       /* Reinitialize the terminal after direct GOP rendering. Restoring the
          EFI text mode alone can leave its graphical console blank. */
-      grub_command_execute ("terminal_output", 1, terminal);
+      grub_command_execute ("terminal_output", 1, console);
+      if (!grub_command_execute ("terminal_output", 1, terminal) && !err)
+        {
+          struct grub_video_mode_info info;
+          char *image[] = { (char *) "--mode=stretch", args[2] };
+          /* A former theme may have narrowed the terminal. Handoff messages
+             belong to a full-screen window with the courtyard behind them. */
+          if (!grub_video_get_info (&info))
+            grub_gfxterm_set_window (GRUB_VIDEO_RENDER_TARGET_DISPLAY,
+                                     0, 0, info.width, info.height,
+                                     (info.mode_type & GRUB_VIDEO_MODE_TYPE_DOUBLE_BUFFERED)
+                                     && !(info.mode_type & GRUB_VIDEO_MODE_TYPE_UPDATING_SWAP),
+                                     font, 0);
+          if (grub_command_execute ("background_image", 2, image))
+            {
+              trace ("BOURGEOIS_BACKGROUND_UNAVAILABLE");
+              grub_print_error ();
+              grub_errno = GRUB_ERR_NONE;
+            }
+        }
     }
   grub_env_set ("timeout", "-1");
   if (!err && (action == SCENE_BOOT_LINUX || action == SCENE_BOOT_WINDOWS))

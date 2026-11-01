@@ -7,7 +7,7 @@ import tarfile
 
 import lab
 import theme
-from native import SOURCE_ARCHIVES
+from native import FONT_SIZES, SOURCE_ARCHIVES
 
 
 def stable_metadata(info):
@@ -40,6 +40,13 @@ def package():
             if not binary.is_file():
                 raise RuntimeError('Run make fancy before packaging')
             shutil.copyfile(binary, stage / 'bourgeois.efi')
+            for size in FONT_SIZES:
+                font = lab.BUILD / 'native' / 'fonts' / f'menu-{size}.pf2'
+                if not font.is_file():
+                    raise RuntimeError('Run make native-build to generate the Fancy fonts')
+                shutil.copyfile(font, stage / 'theme' / font.name)
+            shutil.copyfile(lab.ROOT / 'assets/DejaVu-font-license.txt',
+                            stage / 'theme/menu-font-license.txt')
             sources = stage / 'upstream-source'
             sources.mkdir()
             for name in SOURCE_ARCHIVES:

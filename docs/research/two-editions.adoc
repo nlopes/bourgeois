@@ -31,6 +31,9 @@ The fancy edition can replace its timer with a manual-selection label.
 
 == Slim edition
 
+The door-only interaction below records an earlier prototype.
+The current Slim implementation uses a compact native two-entry menu; see xref:implementation.adoc[the implementation notes] and xref:preview.adoc[the current controls].
+
 Use the installed distribution GRUB binary with theme assets and supported configuration changes.
 Use a scenic background with a static traveler at the selected door.
 Two theme files place the traveler at the Linux or Windows gate.

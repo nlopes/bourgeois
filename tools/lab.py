@@ -162,7 +162,8 @@ def start():
             "-drive", f"file={VM / 'disk.qcow2'},if=virtio,format=qcow2",
             "-drive", f"file={VM / 'seed.iso'},media=cdrom,readonly=on",
             "-netdev", f"user,id=net0,hostfwd=tcp:127.0.0.1:{PORT}-:22",
-            "-device", "virtio-net-pci,netdev=net0", "-display", "none", "-vga", "std",
+            "-device", "virtio-net-pci,netdev=net0", "-display", "none", "-vga", "none",
+            "-device", "VGA,vgamem_mb=64",
             "-serial", f"file:{VM / 'serial.log'}", "-debugcon", f"file:{VM / 'debug.log'}",
             "-qmp", f"unix:{VM / 'qmp.sock'},server=on,wait=off"]
     (VM / "qmp.sock").unlink(missing_ok=True)

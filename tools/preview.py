@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import re
 import shutil
+import subprocess
+import sys
 import tarfile
 
 import lab
@@ -29,7 +31,14 @@ def upload(source, destination):
 
 
 def prepare(edition):
-    lab.wait_ssh()
+    if edition == 'fancy':
+        from native import FONT_SIZES, require_guest
+        require_guest()
+        for size in FONT_SIZES:
+            lab.ssh(f'test -f /home/bourgeois/native-fonts/menu-{size}.pf2 || '
+                    "{ echo 'Fancy fonts missing: run make native-build first.' >&2; exit 1; }")
+    else:
+        lab.wait_ssh()
     # Regenerate the base before extraction. Never make the scene its own input.
     lab.ssh('sudo rm -f /etc/grub.d/99_bourgeois')
     put_text('/tmp/41_windows_fixture', '''#!/bin/sh
@@ -63,6 +72,7 @@ EOF
         ('missing-id', hook('fancy', 'missing-linux-id', windows)),
         ('1024x768', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=1024x768\n  insmod bourgeois')),
         ('800x600', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=800x600\n  insmod bourgeois')),
+        ('2560x1440', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set gfxmode=2560x1440,auto\n  set bourgeois_gfxmode=\n  insmod bourgeois')),
         ('unsupported-mode', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=640x480\n  insmod bourgeois')),
     ):
         (STAGE / f'test-{name}.cfg').write_text(source + modified)
@@ -71,6 +81,11 @@ EOF
         shutil.copyfile(lab.ROOT / 'assets' / asset, STAGE / asset)
     upload(STAGE, '/home/bourgeois/preview')
     lab.ssh('sudo grub-script-check /home/bourgeois/preview/scene.cfg && sudo mkdir -p /boot/grub/bourgeois && sudo cp /home/bourgeois/preview/* /boot/grub/bourgeois/')
+    if edition == 'fancy':
+        lab.ssh('sudo cp /home/bourgeois/native-fonts/*.pf2 /boot/grub/bourgeois/')
+        put_text('/home/bourgeois/menu-font-license.txt',
+                 (lab.ROOT / 'assets/DejaVu-font-license.txt').read_text())
+        lab.ssh('sudo cp /home/bourgeois/menu-font-license.txt /boot/grub/bourgeois/')
     library = lab.BUILD / 'hook-library'
     library.mkdir(parents=True, exist_ok=True)
     for name in ('grub_config.py', 'refresh.py'):
@@ -91,4 +106,7 @@ EOF
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('edition', choices=['slim', 'fancy'])
-    prepare(parser.parse_args().edition)
+    try:
+        prepare(parser.parse_args().edition)
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+        sys.exit(f'bourgeois: {error}')

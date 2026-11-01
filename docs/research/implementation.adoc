@@ -83,6 +83,16 @@ Dark text outlines keep the title and controls readable without backing panels.
 The native renderer scales the background and sprite strip using nearest-neighbor interpolation.
 It frees its bitmap allocations and restores the previous video mode before returning.
 It then initializes `gfxterm` so the technical menu remains visible after direct GOP rendering.
+The terminal is explicitly restored to the full display, and `background_image --mode=stretch` reapplies the courtyard before GRUB executes the selected entry.
+Background restoration errors are reported without suppressing the boot choice.
+The native image includes `gfxterm_background` alongside its renderer dependencies.
+
+Fancy uses the same DejaVu UI family as the host Slim theme, with PF2 sizes 20 through 120 built in the guest.
+Its scale follows display height, constrained by width for narrow modes and capped at the available font sizes.
+Text outlines, hourglass details, and control offsets scale together.
+The original composition, free-standing timer, moving hero, and contextual prompts remain distinct from Slim's two-row list.
+The 20-pixel font is loaded first and selected for the recovery terminal before loading larger UI fonts.
+This avoids a large fallback font making the technical menu unusable at smaller resolutions.
 
 == Lab boundary
 
@@ -99,6 +109,8 @@ It embeds the native module in a separate EFI executable.
 No change to GRUB's core input or menu executor is required.
 The normal Ubuntu EFI executable remains the slim and recovery boot path.
 The module's explicit dependency list is scoped to the pinned Ubuntu build and checked by booting the resulting image.
+The local preflight checks VM tools without requiring host GRUB binaries or host font packages.
+Native builds reject an uninitialized or stopped guest before waiting for SSH, and display the guest build log on compilation failure.
 
 The update hook reads `/boot/grub/grub.cfg.new` after Ubuntu has emitted its normal entries.
 This temporary-file convention is specific to the supported Ubuntu `grub-mkconfig` version.

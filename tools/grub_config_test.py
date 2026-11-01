@@ -61,3 +61,10 @@ class ConfigurationTests(unittest.TestCase):
         result = hook('fancy', 'linux-id', 'windows-id')
         self.assertIn('if [ "${feature_bourgeois}" = "1" ]; then', result)
         self.assertNotIn('if insmod', result)
+
+    def test_fancy_loads_scaled_fonts_and_a_safe_terminal_font(self):
+        result = hook('fancy', 'linux-id', 'windows-id')
+        self.assertIn('if loadfont $prefix/bourgeois/menu-20.pf2; then', result)
+        self.assertIn('set gfxterm_font="Bourgeois UI Regular 20"', result)
+        self.assertIn('insmod gfxterm_background', result)
+        self.assertNotIn('set gfxmode=', result.split('if [ "${timeout}"')[0])

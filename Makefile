@@ -3,8 +3,8 @@ HOST_SIZE ?= 2560x1440
 HOST_STAGE ?= build/host-theme-review
 BACKUP ?= /var/backups/bourgeois/latest
 
-.PHONY: vm vm-stop ssh screenshot test slim host-python host-preflight host-gpus host-gpu-select host-doctor host-stage host-install host-rollback native-build fancy boot-test dist
-vm:
+.PHONY: vm vm-stop ssh screenshot test slim host-python host-preflight lab-preflight host-gpus host-gpu-select host-doctor host-stage host-install host-rollback native-build fancy boot-test dist
+vm: lab-preflight
 	$(PYTHON) tools/lab.py start
 vm-stop:
 	$(PYTHON) tools/lab.py stop
@@ -17,6 +17,8 @@ test:
 	mkdir -p build
 	$(CC) -std=c99 -Wall -Wextra -Werror fancy/state_test.c -o build/state-test
 	build/state-test
+	$(CC) -std=c99 -Wall -Wextra -Werror fancy/layout_test.c -o build/layout-test
+	build/layout-test
 slim:
 	$(PYTHON) tools/preview.py slim
 host-python:
@@ -24,6 +26,8 @@ host-python:
 	@$(PYTHON) -c 'import sys; sys.version_info >= (3, 11) or sys.exit("bourgeois: Python 3.11 or newer is required; set PYTHON to that interpreter.")'
 host-preflight: host-python
 	$(PYTHON) tools/host_checks.py all --sudo
+lab-preflight: host-python
+	$(PYTHON) tools/host_checks.py lab
 host-gpus: host-python
 	$(PYTHON) tools/host_gpu.py $(if $(GPU),--gpu "$(GPU)")
 host-gpu-select: host-python
@@ -36,9 +40,9 @@ host-install: host-preflight host-stage
 host-rollback: host-python
 	$(PYTHON) tools/host_checks.py install --sudo
 	sudo $(PYTHON) tools/host_install.py rollback --backup "$(BACKUP)"
-native-build:
+native-build: lab-preflight
 	$(PYTHON) tools/native.py build
-fancy:
+fancy: lab-preflight
 	$(PYTHON) tools/preview.py fancy
 	$(PYTHON) tools/native.py image
 boot-test:

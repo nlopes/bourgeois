@@ -101,6 +101,11 @@ def run(edition, case):
     elif case == 'windows':
         lab.send_key('w')
         wait_for(serial, 'BOURGEOIS_WINDOWS_FIXTURE', serial_offset)
+        if edition == 'fancy':
+            # At high resolution the serial marker can precede completion of
+            # gfxterm's first repaint. Capture the stable handoff frame.
+            time.sleep(0.5)
+            capture('fancy-handoff')
         time.sleep(5)
         assert 'BOURGEOIS_LINUX_OK' not in read(serial)[serial_offset:]
         if edition == 'fancy':
@@ -132,7 +137,7 @@ def run(edition, case):
         capture(f'{edition}-command-line')
         print(f'CAPTURED {edition}: technical menu, editor, command line (inspect images)')
     elif case == 'fallbacks':
-        for name in ('missing-asset', 'missing-module', 'missing-id', 'unsupported-mode', 'recordfail', 'one-shot', '1024x768', '800x600'):
+        for name in ('missing-asset', 'missing-module', 'missing-id', 'unsupported-mode', 'recordfail', 'one-shot', '1024x768', '800x600', '2560x1440'):
             log, offset, ready = reboot_scene(edition)
             lab.send_key('esc')
             time.sleep(1)
@@ -141,11 +146,14 @@ def run(edition, case):
             log_offset = len(read(log))
             fixture_offset = len(read(serial))
             lab.type_text(f'configfile $prefix/bourgeois/test-{name}.cfg\n')
-            if name in ('1024x768', '800x600'):
+            if name in ('1024x768', '800x600', '2560x1440'):
                 wait_for(log, 'BOURGEOIS_SCENE_READY', log_offset)
                 lab.send_key('spc')
                 time.sleep(1)
                 capture(f'fancy-{name}')
+                screenshot = lab.BUILD / 'evidence' / f'fancy-{name}.png'
+                actual = struct.unpack('>II', screenshot.read_bytes()[16:24])
+                assert actual == tuple(map(int, name.split('x'))), (name, actual)
                 lab.send_key('esc')
                 time.sleep(1)
                 stats = read(log)[log_offset:]
@@ -158,7 +166,7 @@ def run(edition, case):
                 time.sleep(2)
                 assert 'BOURGEOIS_SCENE_READY' not in read(log)[log_offset:]
                 capture(f'fancy-{name}')
-        print('CAPTURED fancy: asset/module/ID/mode fallbacks and two display modes (inspect images)')
+        print('CAPTURED fancy: asset/module/ID/mode fallbacks and three display modes (inspect images)')
     elif case == 'walking':
         assert edition == 'fancy'
         lab.send_key('spc')

@@ -6,6 +6,20 @@ from host_checks import HostSetupError, missing_tools, require_tools
 
 
 class HostChecksTests(unittest.TestCase):
+    def test_lab_dependencies_report_platform_specific_remedies(self):
+        issues = missing_tools('lab', which=lambda name: None)
+        text = '\n'.join(issues)
+        for name in ('qemu-system-x86_64', 'qemu-img', 'xorriso', 'ssh', 'ssh-keygen'):
+            self.assertIn(name, text)
+        self.assertIn('sudo apt install', text)
+        self.assertIn('brew install qemu xorriso', text)
+
+    def test_lab_does_not_require_host_grub_or_artwork_tools(self):
+        available = ('qemu-system-x86_64', 'qemu-img', 'xorriso', 'ssh', 'ssh-keygen')
+        self.assertEqual(missing_tools('lab', which=lambda name: '/bin/' + name
+                                      if name in available else None,
+                                      pillow=False, font='/nonexistent/font'), [])
+
     def test_all_missing_dependencies_include_package_remedies(self):
         issues = missing_tools('all', which=lambda name: None, pillow=False,
                                font='/nonexistent/bourgeois-font.ttf', include_sudo=True)

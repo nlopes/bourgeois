@@ -1,4 +1,6 @@
 import subprocess
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -20,7 +22,26 @@ class BootOrderTests(unittest.TestCase):
 
     def test_wrong_grub_version_stops_before_upload(self):
         from native import build
-        with patch('native.lab.wait_ssh'), patch('native.lab.ssh', return_value=subprocess.CompletedProcess([], 0, '2.14\n2.14\n')), patch('native.upload') as upload:
+        with patch('native.require_guest'), patch('native.lab.ssh', return_value=subprocess.CompletedProcess([], 0, '2.14\n2.14\n')), patch('native.upload') as upload:
             with self.assertRaisesRegex(RuntimeError, 'requires GRUB'):
                 build()
             upload.assert_not_called()
+
+    def test_uninitialized_guest_reports_setup_command_without_waiting(self):
+        from native import require_guest
+        with tempfile.TemporaryDirectory() as directory, patch('native.lab.VM', Path(directory)), \
+                patch('native.require_tools'), patch('native.lab.wait_ssh') as wait:
+            with self.assertRaisesRegex(RuntimeError, 'make vm first'):
+                require_guest()
+            wait.assert_not_called()
+
+    def test_stopped_guest_reports_start_command_without_waiting(self):
+        from native import require_guest
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'id_ed25519').touch()
+            with patch('native.lab.VM', root), patch('native.require_tools'), \
+                    patch('native.lab.QMP', side_effect=ConnectionRefusedError), patch('native.lab.wait_ssh') as wait:
+                with self.assertRaisesRegex(RuntimeError, 'lab is stopped'):
+                    require_guest()
+                wait.assert_not_called()

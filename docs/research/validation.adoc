@@ -31,12 +31,15 @@ The technical menu, entry editor, and command line were captured and visually in
 The slim keyboard suite also passed an untouched 30-second Linux boot, L and W routing, cancellation after more than 30 seconds, and Esc recovery.
 Its technical menu, entry editor, command line, and returned Windows fixture were captured and visually inspected.
 The full slim suite passed again after switching to the shared nameplate artwork.
+It also passed after removing the title, menu, and control backing panels.
 
 image::mockups/fancy-runtime.png[Fancy GRUB at 15 seconds remaining,width=1280]
 
 image::mockups/fancy-windows-gate.png[The traveler at the Windows gate with the Space prompt,width=1280]
 
 image::mockups/slim-runtime.png[Stock Ubuntu GRUB with the courtyard and native countdown,width=1280]
+
+image::mockups/slim-windows-selected.png[Stock Ubuntu GRUB with Windows selected and transparent menu rows,width=1280]
 
 image::mockups/technical-menu.png[Ubuntu's technical menu after Esc,width=800]
 
@@ -46,6 +49,9 @@ Both editions show recessed architectural nameplates from `courtyard-nameplates.
 Fancy also has a freestanding hourglass.
 The stone surrounds and lettering are part of the background artwork, following the original concept.
 Fancy's title and help text use dark outlines, with the courtyard visible behind them.
+Slim's title, menu, countdown label, and controls use text shadows with transparent backgrounds.
+Both selected rows were visually inspected, including the gold pointer at Windows.
+The live countdown was inspected at 30 and 15 seconds, with no backing panels.
 After replacing the font labels with architectural artwork, the untouched timer, walking, reversal, Space at the Windows gate, Esc menu, and command line were checked again.
 The missing-background check returned to a readable technical menu.
 Fancy's three supported modes were visually inspected, including the xref:mockups/fancy-800x600.png[800x600 capture].

@@ -33,9 +33,12 @@ A returned boot failure stays in the native menu and does not re-run the scene.
 Both editions use `courtyard-nameplates.png`, which has raised masonry and recessed stone-framed nameplates based on the original concept.
 The OS names are part of that artwork; GRUB does not draw name labels over the gates.
 
-Slim uses stock `boot_menu`, `label`, `image`, and `circular_progress` facilities.
+Slim uses stock `boot_menu`, `label`, and `circular_progress` facilities.
 Its sand image is static; the ring and seconds label reflect GRUB's live timer.
-GRUB paints the theme canvas in reverse declaration order, so the panel images follow the labels they back.
+The title, menu, and controls have transparent backgrounds and dark text shadows.
+A small gold pointer marks the selected OS without filling the menu row.
+An offset copy of the native menu draws its text shadow and follows the same selection.
+GRUB paints the theme canvas in reverse declaration order, so shadow components follow the text they back.
 Up/Down and Enter use GRUB's normal behavior.
 The letter shortcuts are the native lowercase `l` and `w` hotkeys.
 

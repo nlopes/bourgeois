@@ -9,7 +9,8 @@ GRUB scales them at runtime.
 
 The courtyard is 1672 by 941 pixels.
 The traveler strip is 1983 by 793 pixels with four equal logical cells.
-The gates are at 20% and 80% of the display width.
+The door centers are at source pixels 326 and 1358, about 19.5% and 81.2% of the image width.
+Fancy uses these centers for both its inscriptions and walking destinations.
 The walking baseline is at 73% of the display height.
 
 These project assets use the root MIT license.

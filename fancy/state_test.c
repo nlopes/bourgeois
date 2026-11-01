@@ -14,20 +14,24 @@ int main (void)
   scene_init (&s, 0);
   assert (scene_step (&s, 0, SCENE_SPACE) == SCENE_WAIT);
   scene_step (&s, 0, SCENE_RIGHT);
-  assert (scene_step (&s, 1199, SCENE_SPACE) == SCENE_WAIT);
-  assert (scene_step (&s, 1200, SCENE_SPACE) == SCENE_BOOT_WINDOWS);
+  assert (scene_step (&s, 1200, SCENE_SPACE) == SCENE_WAIT);
+  assert (scene_step (&s, 1248, SCENE_SPACE) == SCENE_WAIT);
+  assert (scene_step (&s, 1249, SCENE_SPACE) == SCENE_BOOT_WINDOWS);
   scene_init (&s, 0);
   scene_step (&s, 0, SCENE_LEFT);
   scene_step (&s, 600, SCENE_RIGHT);
   assert (s.x == 840);
   scene_step (&s, 1200, SCENE_NONE);
   assert (s.x == 1200);
-  assert (scene_step (&s, 2400, SCENE_SPACE) == SCENE_BOOT_WINDOWS);
-  assert (scene_step (&s, 2400, SCENE_ESCAPE) == SCENE_TECHNICAL);
+  assert (scene_step (&s, 2400, SCENE_SPACE) == SCENE_WAIT);
+  assert (scene_step (&s, 2449, SCENE_SPACE) == SCENE_BOOT_WINDOWS);
+  assert (scene_step (&s, 2449, SCENE_ESCAPE) == SCENE_TECHNICAL);
   scene_init (&s, 0);
   assert (scene_step (&s, 1, SCENE_WINDOWS) == SCENE_BOOT_WINDOWS);
   assert (scene_step (&s, 1, SCENE_LINUX) == SCENE_BOOT_LINUX);
   scene_step (&s, 1, SCENE_LEFT);
+  assert (scene_step (&s, 1222, SCENE_SPACE) == SCENE_WAIT);
+  assert (scene_step (&s, 1223, SCENE_SPACE) == SCENE_BOOT_LINUX);
   assert (scene_step (&s, 100000, SCENE_SPACE) == SCENE_BOOT_LINUX);
   return 0;
 }

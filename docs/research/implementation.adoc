@@ -39,13 +39,15 @@ The letter shortcuts are the native lowercase `l` and `w` hotkeys.
 Fancy owns a polling loop through GRUB's terminal input API.
 A Left or Right press selects a walking destination; the character completes the walk without requiring key release events.
 The opposite arrow reverses direction at the current position.
-The center-to-gate trip takes 1.2 seconds.
+The center-to-gate trip takes about 1.2 seconds.
 Space commits only at a gate, and L/W commits immediately.
 Fancy accepts both lowercase and uppercase shortcuts.
 Any key cancels automatic boot for that visit.
 The draining hourglass uses the same remaining-time value as automatic Linux selection.
-The gate labels hang from wooden signs with brass pins.
-A gold edge marks the gate where Space can enter.
+Small inscriptions sit directly in the stone above each doorway.
+They show only the OS names; the keyboard hints stay in the controls below.
+The labels and walking destinations share the measured door centers from the artwork.
+The inscription brightens at the gate where Space can enter.
 The hourglass has an open wood-and-brass frame, curved glass, and falling grains.
 Its sand moves by pixel area so the two bulbs track the remaining time.
 Dark text outlines keep the title and controls readable without backing panels.

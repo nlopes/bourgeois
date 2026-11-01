@@ -6,6 +6,10 @@ enum scene_key { SCENE_NONE, SCENE_LEFT, SCENE_RIGHT, SCENE_SPACE,
                  SCENE_LINUX, SCENE_WINDOWS, SCENE_ESCAPE, SCENE_OTHER };
 enum scene_action { SCENE_WAIT, SCENE_BOOT_LINUX, SCENE_BOOT_WINDOWS,
                     SCENE_TECHNICAL };
+/* Door centers in the 1672-pixel courtyard, shared by labels and walking. */
+enum { SCENE_WIDTH = 2400,
+       SCENE_LINUX_GATE_X = 326 * SCENE_WIDTH / 1672,
+       SCENE_WINDOWS_GATE_X = 1358 * SCENE_WIDTH / 1672 };
 struct scene_state
 {
   unsigned long long started, move_started;
@@ -16,7 +20,7 @@ static void
 scene_init (struct scene_state *s, unsigned long long now)
 {
   s->started = s->move_started = now;
-  s->x = s->origin = s->target = 1200;
+  s->x = s->origin = s->target = SCENE_WIDTH / 2;
   s->cancelled = 0;
   s->remaining = 30000;
 }
@@ -42,14 +46,14 @@ scene_step (struct scene_state *s, unsigned long long now, enum scene_key key)
     }
   if (key == SCENE_ESCAPE)
     return SCENE_TECHNICAL;
-  if (key == SCENE_LINUX || (key == SCENE_SPACE && s->x == 480))
+  if (key == SCENE_LINUX || (key == SCENE_SPACE && s->x == SCENE_LINUX_GATE_X))
     return SCENE_BOOT_LINUX;
-  if (key == SCENE_WINDOWS || (key == SCENE_SPACE && s->x == 1920))
+  if (key == SCENE_WINDOWS || (key == SCENE_SPACE && s->x == SCENE_WINDOWS_GATE_X))
     return SCENE_BOOT_WINDOWS;
   if (key == SCENE_LEFT || key == SCENE_RIGHT)
     {
       s->origin = s->x;
-      s->target = key == SCENE_LEFT ? 480 : 1920;
+      s->target = key == SCENE_LEFT ? SCENE_LINUX_GATE_X : SCENE_WINDOWS_GATE_X;
       s->move_started = now;
     }
   return SCENE_WAIT;

@@ -41,9 +41,9 @@ image::mockups/technical-menu.png[Ubuntu's technical menu after Esc,width=800]
 
 These images are actual QEMU screenshots of running GRUB.
 The earlier concept boards remain design references.
-The fancy captures show the revised wooden gate signs and freestanding hourglass.
+The fancy captures show small stone inscriptions centered over the doorways and a freestanding hourglass.
 The title and help text use dark outlines, with the courtyard visible behind them.
-After this visual change, the untouched timer, walking, reversal, Space at the Windows gate, and Esc tools were checked again.
+After correcting the gate centers, the untouched timer, walking, reversal, Space at the Windows gate, Esc menu, and command line were checked again.
 All three supported modes were visually inspected, including the xref:mockups/fancy-800x600.png[800x600 capture].
 The screenshot checks reject blank frames and wait for `gfxterm` to finish switching modes under software emulation.
 
@@ -60,13 +60,13 @@ The frame loop targets 25 frames per second; timer decisions use elapsed time.
 [cols="1,1,1,1",options="header"]
 |===
 |Mode |Mean draw time |Largest sampled draw |Live bitmap bytes
-|1280x720 |27 ms |445 ms |2,970,432
-|1024x768 |26 ms |133 ms |2,596,480
-|800x600 |17 ms |84 ms |1,584,160
+|1280x720 |25 ms |185 ms |2,970,432
+|1024x768 |28 ms |149 ms |2,596,480
+|800x600 |16 ms |73 ms |1,584,160
 |===
 
-The 1024x768 sample contains 29 frames, and the 800x600 sample contains 28 frames.
-The 1280x720 sample contains 736 frames from the untouched 30-second countdown.
+The 1024x768 sample contains 28 frames, and the 800x600 sample contains 29 frames.
+The 1280x720 sample contains 743 frames from the untouched 30-second countdown.
 The bitmap count covers the scaled courtyard and both facing directions of the traveler strip.
 It excludes framebuffer storage, fonts, PNG decoder work space, and transient source images during scaling.
 This is not a measurement of total GRUB heap use.

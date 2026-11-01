@@ -60,43 +60,17 @@ label (const char *text, int center, int y, int gold)
 }
 
 static void
-gate_sign (const char *text, int center, int y, int selected)
+gate_label (const char *text, int gate, int selected)
 {
-  int w = grub_font_get_string_width (font, text) + 52;
-  int x = center - w / 2, i;
-  /* Short chains fasten the board above the doorway. */
-  for (i = -1; i <= 1; i += 2)
-    {
-      int chain = center + i * (w / 2 - 22);
-      rect (chain - 1, y - 15, 4, 18, 38, 27, 27);
-      rect (chain, y - 15, 1, 18, 185, 146, 88);
-      rect (chain + 1, y - 12, 1, 3, 109, 84, 54);
-      rect (chain + 1, y - 6, 1, 3, 109, 84, 54);
-    }
-  /* Stepped ends, a bevel, and grain give the board a carved silhouette. */
-  rect (x + 4, y + 3, w - 8, 38, 33, 23, 23);
-  rect (x, y + 7, w, 28, 33, 23, 23);
-  rect (x + 5, y, w - 10, 36, 63, 39, 29);
-  rect (x + 2, y + 4, w - 4, 28, 63, 39, 29);
-  rect (x + 5, y + 2, w - 10, 2, selected ? 239 : 168,
-        selected ? 199 : 116, selected ? 115 : 64);
-  rect (x + 6, y + 5, w - 12, 26, 94, 58, 36);
-  rect (x + 7, y + 7, w - 14, 2, 113, 72, 42);
-  rect (x + 7, y + 27, w - 14, 2, 73, 43, 30);
-  for (i = 0; i < 7; i++)
-    {
-      int start = 13 + (i * 29) % (w - 48);
-      rect (x + start, y + 10 + (i * 7) % 16, 12 + i % 3 * 4, 1,
-            108, 66, 38);
-    }
-  for (i = -1; i <= 1; i += 2)
-    {
-      int pin = center + i * (w / 2 - 13);
-      rect (pin - 2, y + 15, 5, 5, 46, 30, 25);
-      rect (pin - 1, y + 15, 3, 3, 193, 145, 76);
-      rect (pin - 1, y + 15, 1, 1, 246, 211, 136);
-    }
-  label (text, center, y + 23, 1);
+  int center = gate * width / SCENE_WIDTH;
+  int x = center - grub_font_get_string_width (font, text) / 2;
+  int y = height * 316 / 941;
+  /* Inset lettering belongs to the existing masonry, with no added board. */
+  grub_font_draw_string (text, font, grub_video_map_rgb (165, 158, 140), x + 1, y + 1);
+  grub_font_draw_string (text, font, grub_video_map_rgb (27, 30, 38), x - 1, y - 1);
+  grub_font_draw_string (text, font,
+                        selected ? grub_video_map_rgb (255, 224, 158)
+                                 : grub_video_map_rgb (205, 189, 150), x, y);
 }
 
 static int
@@ -275,16 +249,17 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       grub_video_blit_bitmap (background, GRUB_VIDEO_BLIT_REPLACE, 0, 0, 0, 0, width, height);
       label ("CHOOSE YOUR KINGDOM", width / 2, 49, 1);
       label ("A journey begins with a door", width / 2, 72, 0);
-      gate_sign ("LINUX  [L]", width / 5, height * 28 / 100, state.x == 480);
-      gate_sign ("WINDOWS  [W]", width * 4 / 5, height * 28 / 100, state.x == 1920);
+      gate_label ("LINUX", SCENE_LINUX_GATE_X, state.x == SCENE_LINUX_GATE_X);
+      gate_label ("WINDOWS", SCENE_WINDOWS_GATE_X, state.x == SCENE_WINDOWS_GATE_X);
       {
         int frame = state.x != state.target ? (now / 140) % 4 : 0;
         grub_video_blit_bitmap (state.target < state.origin ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
-                                state.x * width / 2400 - frame_width / 2,
+                                state.x * width / SCENE_WIDTH - frame_width / 2,
                                 height * 73 / 100 - frame_height,
                                 frame * frame_width, 0, frame_width, frame_height);
       }
-      label (state.x == 480 ? "Space: enter Linux" : state.x == 1920 ? "Space: enter Windows"
+      label (state.x == SCENE_LINUX_GATE_X ? "Space: enter Linux"
+             : state.x == SCENE_WINDOWS_GATE_X ? "Space: enter Windows"
              : "Left / Right: walk to a gate", width / 2, height - 88, 1);
       label ("L/W: boot now    Esc: technical menu", width / 2, height - 62, 0);
       label (state.cancelled ? "Auto-boot cancelled for this visit"

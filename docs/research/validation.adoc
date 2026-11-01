@@ -30,6 +30,7 @@ The technical menu, entry editor, and command line were captured and visually in
 
 The slim keyboard suite also passed an untouched 30-second Linux boot, L and W routing, cancellation after more than 30 seconds, and Esc recovery.
 Its technical menu, entry editor, command line, and returned Windows fixture were captured and visually inspected.
+The full slim suite passed again after switching to the shared nameplate artwork.
 
 image::mockups/fancy-runtime.png[Fancy GRUB at 15 seconds remaining,width=1280]
 
@@ -41,10 +42,13 @@ image::mockups/technical-menu.png[Ubuntu's technical menu after Esc,width=800]
 
 These images are actual QEMU screenshots of running GRUB.
 The earlier concept boards remain design references.
-The fancy captures show small stone inscriptions centered over the doorways and a freestanding hourglass.
-The title and help text use dark outlines, with the courtyard visible behind them.
-After correcting the gate centers, the untouched timer, walking, reversal, Space at the Windows gate, Esc menu, and command line were checked again.
-All three supported modes were visually inspected, including the xref:mockups/fancy-800x600.png[800x600 capture].
+Both editions show recessed architectural nameplates from `courtyard-nameplates.png`.
+Fancy also has a freestanding hourglass.
+The stone surrounds and lettering are part of the background artwork, following the original concept.
+Fancy's title and help text use dark outlines, with the courtyard visible behind them.
+After replacing the font labels with architectural artwork, the untouched timer, walking, reversal, Space at the Windows gate, Esc menu, and command line were checked again.
+The missing-background check returned to a readable technical menu.
+Fancy's three supported modes were visually inspected, including the xref:mockups/fancy-800x600.png[800x600 capture].
 The screenshot checks reject blank frames and wait for `gfxterm` to finish switching modes under software emulation.
 
 The Linux boot marker runs after `grub-common.service` clears `recordfail`.
@@ -61,8 +65,8 @@ The frame loop targets 25 frames per second; timer decisions use elapsed time.
 |===
 |Mode |Mean draw time |Largest sampled draw |Live bitmap bytes
 |1280x720 |25 ms |185 ms |2,970,432
-|1024x768 |28 ms |149 ms |2,596,480
-|800x600 |16 ms |73 ms |1,584,160
+|1024x768 |27 ms |161 ms |2,596,480
+|800x600 |16 ms |79 ms |1,584,160
 |===
 
 The 1024x768 sample contains 28 frames, and the 800x600 sample contains 29 frames.

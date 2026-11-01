@@ -25,6 +25,8 @@ The xref:implementation-plan.adoc[approved plan] defines the initial target and 
 The xref:implementation.adoc[implementation notes] describe boot ownership and native rendering.
 The xref:preview.adoc[preview guide] covers setup, controls, tests, recovery, and packages.
 The xref:validation.adoc[validation record] lists the tested environment and remaining limits.
+Both editions use the recessed architectural nameplates from the original concept.
+The xref:../../assets/README.adoc[artwork notes and prompts] describe the background asset.
 
 == Initial feasibility research
 

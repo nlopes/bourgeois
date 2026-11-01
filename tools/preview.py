@@ -58,7 +58,7 @@ EOF
     for name, modified in (
         ('recordfail', 'set recordfail=1\n' + hook('fancy', linux, windows)),
         ('one-shot', f'set boot_once=true\nset default={windows}\nset timeout=0\n' + hook('fancy', linux, windows)),
-        ('missing-asset', hook('fancy', linux, windows).replace('courtyard.png', 'missing.png')),
+        ('missing-asset', hook('fancy', linux, windows).replace('courtyard-nameplates.png', 'missing.png')),
         ('missing-module', 'set feature_bourgeois=0\n' + hook('fancy', linux, windows).replace('insmod bourgeois', 'insmod no_such_module')),
         ('missing-id', hook('fancy', 'missing-linux-id', windows)),
         ('1024x768', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=1024x768\n  insmod bourgeois')),
@@ -67,7 +67,7 @@ EOF
     ):
         (STAGE / f'test-{name}.cfg').write_text(source + modified)
     theme.build(STAGE)
-    for asset in ('courtyard.png', 'traveler.png'):
+    for asset in ('courtyard.png', 'courtyard-nameplates.png', 'traveler.png'):
         shutil.copyfile(lab.ROOT / 'assets' / asset, STAGE / asset)
     upload(STAGE, '/home/bourgeois/preview')
     lab.ssh('sudo grub-script-check /home/bourgeois/preview/scene.cfg && sudo mkdir -p /boot/grub/bourgeois && sudo cp /home/bourgeois/preview/* /boot/grub/bourgeois/')

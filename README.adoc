@@ -18,6 +18,7 @@ See xref:docs/research/README.adoc[the research and mockups] for the feasibility
 The first target is Ubuntu 24.04 LTS on x86_64 UEFI.
 The lab uses a disposable QEMU disk; it does not change the host's boot configuration.
 Secure Boot and real Windows boot validation are deferred.
+Both editions use the same courtyard artwork with stone-framed OS nameplates.
 
 Install Python 3.11 or newer, a C compiler, Make, QEMU, xorriso, and OpenSSH.
 On macOS, install the VM tools with `brew install qemu xorriso`.

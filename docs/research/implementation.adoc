@@ -30,6 +30,9 @@ A returned boot failure stays in the native menu and does not re-run the scene.
 
 == Graphics and input
 
+Both editions use `courtyard-nameplates.png`, which has raised masonry and recessed stone-framed nameplates based on the original concept.
+The OS names are part of that artwork; GRUB does not draw name labels over the gates.
+
 Slim uses stock `boot_menu`, `label`, `image`, and `circular_progress` facilities.
 Its sand image is static; the ring and seconds label reflect GRUB's live timer.
 GRUB paints the theme canvas in reverse declaration order, so the panel images follow the labels they back.
@@ -44,10 +47,8 @@ Space commits only at a gate, and L/W commits immediately.
 Fancy accepts both lowercase and uppercase shortcuts.
 Any key cancels automatic boot for that visit.
 The draining hourglass uses the same remaining-time value as automatic Linux selection.
-Small inscriptions sit directly in the stone above each doorway.
-They show only the OS names; the keyboard hints stay in the controls below.
-The labels and walking destinations share the measured door centers from the artwork.
-The inscription brightens at the gate where Space can enter.
+The walking destinations use the measured door centers from the artwork.
+The contextual Space prompt identifies the gate the character has reached.
 The hourglass has an open wood-and-brass frame, curved glass, and falling grains.
 Its sand moves by pixel area so the two bulbs track the remaining time.
 Dark text outlines keep the title and controls readable without backing panels.

@@ -59,20 +59,6 @@ label (const char *text, int center, int y, int gold)
                         center - text_width / 2, y);
 }
 
-static void
-gate_label (const char *text, int gate, int selected)
-{
-  int center = gate * width / SCENE_WIDTH;
-  int x = center - grub_font_get_string_width (font, text) / 2;
-  int y = height * 316 / 941;
-  /* Inset lettering belongs to the existing masonry, with no added board. */
-  grub_font_draw_string (text, font, grub_video_map_rgb (165, 158, 140), x + 1, y + 1);
-  grub_font_draw_string (text, font, grub_video_map_rgb (27, 30, 38), x - 1, y - 1);
-  grub_font_draw_string (text, font,
-                        selected ? grub_video_map_rgb (255, 224, 158)
-                                 : grub_video_map_rgb (205, 189, 150), x, y);
-}
-
 static int
 glass_half_width (int row)
 {
@@ -249,8 +235,6 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       grub_video_blit_bitmap (background, GRUB_VIDEO_BLIT_REPLACE, 0, 0, 0, 0, width, height);
       label ("CHOOSE YOUR KINGDOM", width / 2, 49, 1);
       label ("A journey begins with a door", width / 2, 72, 0);
-      gate_label ("LINUX", SCENE_LINUX_GATE_X, state.x == SCENE_LINUX_GATE_X);
-      gate_label ("WINDOWS", SCENE_WINDOWS_GATE_X, state.x == SCENE_WINDOWS_GATE_X);
       {
         int frame = state.x != state.target ? (now / 140) % 4 : 0;
         grub_video_blit_bitmap (state.target < state.origin ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,

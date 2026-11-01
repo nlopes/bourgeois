@@ -32,12 +32,10 @@ def build(target):
     png(target / 'selected_c.png', 8, 8, lambda x, y: (53, 69, 44, 240))
     (target / 'theme.txt').write_text('''# bourgeois slim: all interaction belongs to stock GRUB.
 title-text: ""
-desktop-image: "courtyard.png"
+desktop-image: "courtyard-nameplates.png"
 desktop-image-scale-method: "stretch"
 terminal-font: "Unifont Regular 16"
 + label { left = 25% top = 5% width = 50% height = 30 text = "CHOOSE YOUR KINGDOM" align = center color = "#f4dfb5" }
-+ label { left = 12% top = 29% width = 16% height = 26 text = "LINUX  [L]" align = center color = "#f4dfb5" }
-+ label { left = 72% top = 29% width = 16% height = 26 text = "WINDOWS  [W]" align = center color = "#f4dfb5" }
 + circular_progress { id = "__timeout__" left = 88% top = 5% width = 76 height = 90 center_bitmap = "hourglass.png" tick_bitmap = "tick.png" num_ticks = 30 ticks_disappear = true start_angle = -90 }
 + label { id = "__timeout__" left = 86% top = 19% width = 10% height = 24 align = center color = "#f4dfb5" }
 + boot_menu { left = 40% top = 78% width = 20% height = 76 item_height = 30 item_spacing = 4 item_padding = 10 item_color = "#d4c7b2" selected_item_color = "#ffe1a1" selected_item_pixmap_style = "selected_*.png" item_font = "Unifont Regular 16" icon_width = 0 icon_height = 0 scrollbar = false }
@@ -47,6 +45,4 @@ terminal-font: "Unifont Regular 16"
 + image { left = 32% top = 3% width = 36% height = 7% file = "panel.png" }
 + image { left = 38% top = 77% width = 24% height = 13% file = "panel.png" }
 + image { left = 8% top = 91% width = 84% height = 6% file = "panel.png" }
-+ image { left = 12% top = 28% width = 16% height = 5% file = "panel.png" }
-+ image { left = 72% top = 28% width = 16% height = 5% file = "panel.png" }
 ''')

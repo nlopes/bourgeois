@@ -3,6 +3,7 @@ import tempfile
 import unittest
 
 from host_theme import stage
+from host_install import verify_stage
 
 try:
     from PIL import Image
@@ -16,6 +17,7 @@ class HostThemeTests(unittest.TestCase):
         for width, height in ((1280, 720), (1024, 768)):
             with self.subTest(size=(width, height)), tempfile.TemporaryDirectory() as directory:
                 stage(directory, width, height)
+                self.assertEqual(verify_stage(Path(directory))['size'], [width, height])
                 for name, center in (('ubuntu', 326 / 1672), ('windows', 1358 / 1672)):
                     with Image.open(Path(directory) / 'icons' / f'{name}.png') as icon:
                         self.assertEqual(icon.size, (width, height // 7))

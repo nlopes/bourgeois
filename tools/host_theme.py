@@ -4,12 +4,20 @@ Requires Pillow. Build for the resolution actually used by GRUB, for example:
     python3 tools/host_theme.py build/host-theme-review --size 1280x720
 """
 import argparse
+import hashlib
+import json
 from pathlib import Path
 import shutil
 
 import theme
 
 ROOT = Path(__file__).resolve().parent.parent
+STAGED_FILES = (
+    'theme.txt', 'preview.cfg', '06_bourgeois_background',
+    'courtyard-nameplates.png', 'hourglass.png', 'tick.png',
+    'selected_w.png', 'selected_c.png', 'shadow_w.png', 'shadow_c.png',
+    'icons/ubuntu.png', 'icons/gnu-linux.png', 'icons/linux.png', 'icons/windows.png',
+)
 
 
 BACKGROUND_HOOK = '''#!/bin/sh
@@ -85,6 +93,10 @@ set theme=$prefix/themes/bourgeois/theme.txt
 export theme
 source $prefix/clean-menu.cfg
 ''')
+    manifest = {'format': 1, 'size': [width, height], 'files': {
+        name: hashlib.sha256((target / name).read_bytes()).hexdigest()
+        for name in STAGED_FILES}}
+    (target / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 
 
 def resolution(value):

@@ -98,6 +98,9 @@ These rendering checks do not replace real OS boot validation.
 The user separately reported successful Linux and Windows boots with the preceding host artwork installation.
 The monitor advertises 3840x2160 in Linux; the host firmware's GRUB mode list has not yet been confirmed.
 The Fancy resolution-inheritance change has not yet been rebuilt or boot-tested as a native EFI image.
+Host-installer tests use temporary filesystem roots and simulated GRUB commands.
+They check complete backup restoration after generation and syntax-check failures, staging checksum rejection, symlink rejection, and kernel refresh on rollback.
+They do not run the privileged installer against the live host.
 
 image::mockups/slim-host-linux-selected.png[Stock GRUB host artwork with the traveler at the selected Linux door,width=1280]
 

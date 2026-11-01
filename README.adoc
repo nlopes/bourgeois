@@ -67,19 +67,42 @@ See xref:docs/research/implementation.adoc[the implementation notes] for entry o
 
 === Artwork for an existing host menu
 
-The host staging tool requires Python 3.11 or newer and Pillow.
-It builds artwork for an existing two-entry Linux/Windows menu without installing files or changing firmware.
-Build for the resolution actually used by GRUB:
+The host tools require Python 3.11 or newer, Pillow, Make, sudo, `update-grub`, and `grub-script-check`.
+They update this machine's existing two-entry Linux/Windows clean menu.
+Build and test the artwork without installing it:
 
 [source,shell]
 ----
-python3 tools/host_theme.py build/host-theme-review --size 1280x720
+make host-stage
 make test
 ----
 
+Install or reinstall with one command:
+
+[source,shell]
+----
+make host-install
+----
+
+This builds as your user, asks for sudo for installation, saves a backup under `/var/backups/bourgeois/`, and regenerates and checks both menus.
+It restores the previous files if installation or validation fails.
+It writes only the artwork, a background hook, its own theme/resolution override, and the generated menus.
+It does not install an EFI image or change firmware boot entries.
+The default mode is the tested 1280x720.
+Set `HOST_SIZE=3840x2160` only after confirming that mode with `videoinfo` in the machine's GRUB session.
+The hero artwork must be built for the mode actually used.
+
+Restore the last backup with:
+
+[source,shell]
+----
+make host-rollback
+----
+
+Set `BACKUP` to an older printed backup directory when needed.
 The static traveler switches doors when the native selection changes.
 The supplied background hook keeps the courtyard visible behind GRUB's boot messages.
-See xref:docs/research/preview.adoc#host-artwork[host artwork installation and rollback] before copying the output to the host.
+See xref:docs/research/preview.adoc#host-artwork[host artwork installation and rollback] for checks and recovery details.
 
 == Fancy preview
 

@@ -67,42 +67,67 @@ To discard the lab, stop the VM and remove `build/vm/`.
 The next start creates a fresh overlay and SSH key from the checked image cache.
 
 This repository provides a disposable development preview.
-Real-machine installation, signed EFI packaging, and actual Windows validation need a separate validation step.
+Native EFI installation, signed EFI packaging, and actual Windows validation in the lab need a separate validation step.
 
 [[host-artwork]]
 == Host artwork for an existing menu
 
-The host builder is separate from the VM installers.
-It requires Python 3.11 or newer and Pillow, and writes only to the chosen staging directory.
+The host tools are separate from the VM installers.
+They require Python 3.11 or newer, Pillow, Make, sudo, `update-grub`, and `grub-script-check`.
+The builder writes only to the chosen staging directory.
 The generated theme expects the existing two-entry Linux/Windows menu and its native classes.
 The current host uses `/boot/grub/clean-menu.cfg`; this is a local convention, not a standard Ubuntu file.
 The builder does not install the lab fixture, a menu hook, a native module, or an EFI image.
 
 [source,shell]
 ----
-python3 tools/host_theme.py build/host-theme-review --size 1280x720
+make host-stage
 make test
 ----
 
+`HOST_SIZE` defaults to `1280x720`; `HOST_STAGE` defaults to `build/host-theme-review`.
+The direct staging command is `python3 tools/host_theme.py build/host-theme-review --size 1280x720`.
+The builder records file checksums and display dimensions in `manifest.json`.
 Build for the actual GRUB resolution, because the transparent class icons use that pixel width.
 The stock two-entry menu stays usable if another mode is selected, but the hero positions will not match the doors.
 Check firmware modes with `set pager=1` and `videoinfo` at GRUB's command line.
 Linux monitor modes alone do not establish which modes the firmware exposes to GRUB.
 
-Back up the existing theme directory, `/etc/default/grub.d`, `/etc/grub.d`, `/boot/grub/grub.cfg`, and `/boot/grub/clean-menu.cfg` before installation.
-Copy the staged PNGs, `theme.txt`, `preview.cfg`, and the `icons/` directory into `/boot/grub/themes/bourgeois/`.
-Retain the existing GRUB theme setting and tested display mode during the first test.
-At the GRUB command line, run `configfile $prefix/themes/bourgeois/preview.cfg` to test the hero and the scenic terminal background together.
-The preview uses the existing clean-menu boot commands and writes no persistent state.
+Install or reinstall the already-present host theme with:
 
-After the temporary test, the staged `06_bourgeois_background` script can be installed as an executable in `/etc/grub.d/` and applied with `update-grub`.
-It initializes only the terminal background after Ubuntu's header; it does not replace boot entries.
-Check both generated menus with `grub-script-check` before rebooting.
+[source,shell]
+----
+make host-install
+----
+
+This target builds as the current user and runs `tools/host_install.py install` with sudo.
+The installer requires the existing Bourgeois theme and executable `99_clean_menu` generator.
+It rejects a conflicting lab menu hook, modified staging files, and clean-menu boot commands that differ from the full menu.
+It backs up the theme directory, its background hook, its own settings override, `grub.cfg`, and `clean-menu.cfg` under `/var/backups/bourgeois/slim-*`.
+Keep the printed backup path.
+
+It installs only the reviewed artwork and `06_bourgeois_background`, and selects the theme and display mode through `/etc/default/grub.d/zzzz-bourgeois-host.cfg`.
+It leaves other defaults, menu generators, kernel arguments, EFI files, and firmware entries alone.
+It runs `update-grub`, checks both menus, and verifies their boot commands still match.
+If those steps fail, it restores the backed-up files and returns an error.
+Reboot only after the command succeeds.
+The installer does not reboot the machine.
+
+The background hook initializes only the terminal background after Ubuntu's header; it does not replace boot entries.
+The installed `preview.cfg` remains available as a temporary GRUB configuration using the existing clean-menu commands.
 Do not treat `grub-mkconfig -o` to another path as a dry run: local generator hooks may still write live auxiliary files.
 
-For rollback, remove the added background hook, restore the previous theme directory, and regenerate GRUB's configuration.
-If regeneration fails, restore the backed-up `grub.cfg` and `clean-menu.cfg` before rebooting.
-Retain local keyboard access and recovery media; automatic rollback is not provided.
+Restore the most recent successful installation's backup with:
+
+[source,shell]
+----
+make host-rollback
+----
+
+`BACKUP` defaults to `/var/backups/bourgeois/latest` and can select an older printed backup directory.
+Rollback restores the theme, background hook, and installer-owned settings, then regenerates both menus for the currently installed kernels.
+If regeneration fails, it restores the snapshot's generated menus and returns an error; check the failure before rebooting.
+Retain local keyboard access and recovery media; automatic recovery from a failed operating-system boot or power loss is not provided.
 Fancy remains a VM preview until its GRUB version, disk layout, and Secure Boot signing are adapted and validated for the host.
 
 == Tests and packages

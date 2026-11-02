@@ -13,6 +13,7 @@ import subprocess
 import sys
 
 import theme
+import hero
 from host_checks import FONT, HostSetupError, require_tools
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -40,7 +41,7 @@ def stage(target, width=2560, height=1440):
     if not (800 <= width <= 7680 and 600 <= height <= 4320):
         raise ValueError('Choose a GRUB resolution between 800x600 and 7680x4320')
     require_tools('stage')
-    from PIL import Image, ImageFont, ImageOps
+    from PIL import ImageFont
 
     target = Path(target)
     target.mkdir(parents=True, exist_ok=True)
@@ -59,38 +60,9 @@ def stage(target, width=2560, height=1440):
     shutil.copyfile(ROOT / 'assets/DejaVu-font-license.txt', target / 'menu-font-license.txt')
     shutil.copyfile(ROOT / 'assets/courtyard-nameplates.png',
                     target / 'courtyard-nameplates.png')
-    icons = target / 'icons'
-    icons.mkdir(exist_ok=True)
-    hero_height = height // 7
-    with Image.open(ROOT / 'assets/traveler.png') as sheet:
-        # The first of four logical cells is the existing standing pose.
-        actor = sheet.crop((0, 0, sheet.width // 4, sheet.height))
-        actor = actor.crop(actor.getbbox())
-        actor = actor.resize((round(actor.width * hero_height / actor.height),
-                              hero_height), Image.Resampling.NEAREST)
-        for classes, center, face_left in (
-                (('ubuntu', 'gnu-linux', 'linux'), 326 / 1672, True),
-                (('windows',), 1358 / 1672, False)):
-            sprite = ImageOps.mirror(actor) if face_left else actor
-            canvas = Image.new('RGBA', (width, hero_height))
-            canvas.paste(sprite, (round(center * width) - sprite.width // 2, 0))
-            for name in classes:
-                canvas.save(icons / f'{name}.png')
-
-    # The shared full-screen list also invalidates this nested hero view.
-    views = f'''
-# The clipped one-row view scrolls to the selected entry's class icon.
-+ canvas {{ left = 0 top = 73%-{hero_height} width = 100% height = {hero_height}
-  + boot_menu {{ left = 0 top = 0 width = 100% height = 100%
-    item_height = {hero_height} item_spacing = 0 item_padding = 0
-    icon_width = {width} icon_height = {hero_height} item_icon_space = 0
-    item_color = "#00000000" selected_item_color = "#00000000"
-    scrollbar = false scrollbar_left_pad = 0 scrollbar_right_pad = 0
-  }}
-}}
-'''
+    hero.icons(target, width, height)
     file = target / 'theme.txt'
-    file.write_text(file.read_text() + views)
+    file.write_text(file.read_text() + hero.view(width, height))
     (target / '06_bourgeois_background').write_text(BACKGROUND_HOOK)
     (target / 'preview.cfg').write_text(f'''# Temporary preview for the existing host menu. No persistent state writes.
 set gfxmode={width}x{height}

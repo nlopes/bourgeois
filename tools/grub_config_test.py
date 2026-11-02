@@ -61,6 +61,7 @@ class ConfigurationTests(unittest.TestCase):
         result = hook('fancy', 'linux-id', 'windows-id')
         self.assertIn('if [ "${feature_bourgeois}" = "1" ]; then', result)
         self.assertNotIn('if insmod', result)
+        self.assertIn('$prefix/bourgeois/traveler-gates.png', result)
 
     def test_fancy_loads_scaled_fonts_and_a_safe_terminal_font(self):
         result = hook('fancy', 'linux-id', 'windows-id')

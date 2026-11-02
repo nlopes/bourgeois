@@ -19,6 +19,7 @@
 #include <grub/cpu/io.h>
 #include "state.h"
 #include "layout.h"
+#include "pixels.h"
 
 GRUB_MOD_LICENSE ("GPLv3+");
 static grub_command_t command;
@@ -60,6 +61,46 @@ label (const char *text, int center, int y, int gold)
                         gold ? grub_video_map_rgb (250, 221, 165)
                              : grub_video_map_rgb (208, 215, 209),
                         center - text_width / 2, y);
+}
+
+static void
+stars (grub_uint64_t now)
+{
+  static const unsigned positions[][2] = {
+    { 265, 45 }, { 350, 60 }, { 475, 20 }, { 580, 90 }, { 755, 36 },
+    { 950, 85 }, { 1060, 45 }, { 1184, 76 }, { 1320, 34 }
+  };
+  unsigned i;
+  for (i = 0; i < sizeof positions / sizeof positions[0]; i++)
+    {
+      unsigned light = scene_star_light (now, i);
+      int x = positions[i][0] * width / 1672;
+      int y = positions[i][1] * height / 941;
+      unsigned size = ui_scale;
+      if (light < 80)
+        continue;
+      grub_video_fill_rect (grub_video_map_rgb (120 + light / 2, 130 + light / 3,
+                                               160 + light / 3), x, y, size, size);
+      if (light > 225)
+        {
+          grub_video_color_t glow = grub_video_map_rgb (130, 140, 175);
+          grub_video_fill_rect (glow, x - size, y, size, size);
+          grub_video_fill_rect (glow, x + size, y, size, size);
+          grub_video_fill_rect (glow, x, y - size, size, size);
+          grub_video_fill_rect (glow, x, y + size, size, size);
+        }
+    }
+}
+
+static struct scene_pixels
+bitmap_pixels (struct grub_video_bitmap *bitmap)
+{
+  struct scene_pixels pixels = { bitmap->data, bitmap->mode_info.width,
+    bitmap->mode_info.height, bitmap->mode_info.pitch, bitmap->mode_info.bytes_per_pixel };
+  if (bitmap->mode_info.blit_format != GRUB_VIDEO_BLIT_FORMAT_RGB_888
+      && bitmap->mode_info.blit_format != GRUB_VIDEO_BLIT_FORMAT_RGBA_8888)
+    pixels.channels = 0;
+  return pixels;
 }
 
 static int
@@ -213,7 +254,8 @@ select_entry (const char *id, int manual)
 }
 
 static grub_err_t
-restore_terminal (const char *background, grub_font_t scene_font)
+restore_terminal (const char *background, grub_font_t scene_font,
+                  struct grub_video_bitmap **handoff)
 {
   char *console[] = { (char *) "console" };
   char *terminal[] = { (char *) "gfxterm" };
@@ -246,6 +288,28 @@ restore_terminal (const char *background, grub_font_t scene_font)
                                   scene_font, 0);
   if (err)
     goto console_fallback;
+  if (handoff)
+    {
+      if ((*handoff)->mode_info.width != info.width
+          || (*handoff)->mode_info.height != info.height)
+        {
+          struct grub_video_bitmap *scaled = 0;
+          err = grub_video_bitmap_create_scaled (&scaled, info.width, info.height,
+                                                 *handoff, GRUB_VIDEO_BITMAP_SCALE_METHOD_NEAREST);
+          if (err)
+            goto console_fallback;
+          grub_video_bitmap_destroy (*handoff);
+          *handoff = scaled;
+        }
+      /* gfxterm owns this bitmap until its next background change. Its
+         normal clear and boot messages must retain the selected traveler. */
+      grub_video_bitmap_destroy (grub_gfxterm_background.bitmap);
+      grub_gfxterm_background.bitmap = *handoff;
+      grub_gfxterm_background.blend_text_bg = 1;
+      *handoff = 0;
+      grub_gfxterm_schedule_repaint ();
+      return GRUB_ERR_NONE;
+    }
   if (grub_command_execute ("background_image", 2, image))
     {
       trace ("BOURGEOIS_BACKGROUND_UNAVAILABLE");
@@ -269,20 +333,21 @@ static grub_err_t
 run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
 {
   struct grub_video_bitmap *background = 0, *actor = 0, *left_actor = 0;
+  struct grub_video_bitmap *gate_actor = 0;
   struct scene_state state = { 0 };
   enum scene_action action = SCENE_WAIT;
   grub_err_t err = GRUB_ERR_NONE, recovery_err;
   struct grub_error_saved saved;
   unsigned x, y;
-  int frame_width = 0, frame_height = 0;
+  int frame_width = 0, frame_height = 0, gate_width = 0;
   unsigned frames = 0, render_total = 0, render_max = 0;
   char *console[] = { (char *) "console" };
   const char *mode = grub_env_get ("bourgeois_gfxmode");
   if (!mode || !*mode)
     mode = grub_env_get ("gfxmode");
-  if (argc != 4 || !find_entry (args[0], 0) || !find_entry (args[1], 0)
+  if (argc != 5 || !find_entry (args[0], 0) || !find_entry (args[1], 0)
       || grub_strcmp (args[0], args[1]) == 0)
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: expected two unique entry IDs and two assets");
+    return grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: expected two unique entry IDs and three assets");
   err = grub_env_set ("timeout", "-1");
   if (err)
     return err;
@@ -330,6 +395,9 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
                        (char *) actor->data + row * actor->mode_info.pitch
                        + (frame * frame_width + frame_width - 1 - col) * bytes, bytes);
   }
+  gate_width = frame_height * 3 / 4;
+  if ((err = load_scaled (&gate_actor, args[4], gate_width * 4, frame_height)))
+    goto done;
   scene_init (&state, grub_get_time_ms ());
   trace ("BOURGEOIS_SCENE_READY");
   while (action == SCENE_WAIT)
@@ -346,14 +414,21 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
                                     0, 0, 0, 0, width, height);
       if (err)
         goto done;
+      stars (now);
       label ("CHOOSE YOUR KINGDOM", width / 2, 49 * ui_scale, 1);
       label ("A journey begins with a door", width / 2, 72 * ui_scale, 0);
       {
-        int frame = state.x != state.target ? (now / 140) % 4 : 0;
-        err = grub_video_blit_bitmap (state.facing_left ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
-                                      state.x * width / SCENE_WIDTH - frame_width / 2,
-                                      height * 73 / 100 - frame_height,
-                                      frame * frame_width, 0, frame_width, frame_height);
+        int gate_frame = scene_gate_frame (&state, now);
+        int sprite_width = gate_frame >= 0 ? gate_width : frame_width;
+        int frame = gate_frame >= 0 ? gate_frame
+          : state.x != state.target ? (int) ((now / 140) % 4) : 0;
+        struct grub_video_bitmap *sprite = gate_frame >= 0 ? gate_actor
+          : state.facing_left ? left_actor : actor;
+        int step = state.entering != SCENE_WAIT && frame == 3 ? 2 * ui_scale : 0;
+        err = grub_video_blit_bitmap (sprite, GRUB_VIDEO_BLIT_BLEND,
+                                      state.x * width / SCENE_WIDTH - sprite_width / 2,
+                                      height * 73 / 100 - frame_height - step,
+                                      frame * sprite_width, 0, sprite_width, frame_height);
         if (err)
           goto done;
       }
@@ -387,16 +462,31 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       grub_snprintf (stats, sizeof stats,
                      "BOURGEOIS_RENDER %ux%u frames=%u avg_ms=%u max_ms=%u bitmap_bytes=%u",
                      width, height, frames, render_total / frames, render_max,
-                     background->mode_info.pitch * height + actor->mode_info.pitch * frame_height * 2);
+                     background->mode_info.pitch * height + actor->mode_info.pitch * frame_height * 2
+                     + gate_actor->mode_info.pitch * frame_height);
       trace (stats);
     }
+  if (!err && (action == SCENE_BOOT_LINUX || action == SCENE_BOOT_WINDOWS))
+    {
+      struct scene_pixels dst = bitmap_pixels (background), src = bitmap_pixels (gate_actor);
+      int gate = action == SCENE_BOOT_LINUX ? SCENE_LINUX_GATE_X : SCENE_WINDOWS_GATE_X;
+      int frame = state.entering != SCENE_WAIT ? 3 : 2;
+      int step = frame == 3 ? 2 * ui_scale : 0;
+      if (!scene_stamp (&dst, &src, frame * gate_width,
+                         gate * width / SCENE_WIDTH - gate_width / 2,
+                         height * 73 / 100 - frame_height - step, gate_width, frame_height))
+        err = grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: unsupported sprite pixel format");
+    }
+  grub_video_bitmap_destroy (gate_actor);
   grub_video_bitmap_destroy (left_actor);
   grub_video_bitmap_destroy (actor);
-  grub_video_bitmap_destroy (background);
   saved.grub_errno = err;
   grub_memcpy (saved.errmsg, grub_errmsg, sizeof saved.errmsg);
   grub_errno = GRUB_ERR_NONE;
-  recovery_err = restore_terminal (args[2], err ? 0 : font);
+  recovery_err = restore_terminal (args[2], err ? 0 : font,
+                                   !err && (action == SCENE_BOOT_LINUX || action == SCENE_BOOT_WINDOWS)
+                                   ? &background : 0);
+  grub_video_bitmap_destroy (background);
   if (err)
     {
       grub_errno = saved.grub_errno;
@@ -418,7 +508,7 @@ GRUB_MOD_INIT (bourgeois)
 {
   grub_env_set ("feature_bourgeois", "1");
   grub_env_export ("feature_bourgeois");
-  command = grub_register_command ("bourgeois", run_scene, "LINUX_ID WINDOWS_ID BACKGROUND SPRITES",
+  command = grub_register_command ("bourgeois", run_scene, "LINUX_ID WINDOWS_ID BACKGROUND SPRITES GATE_SPRITES",
                                    "Walk to an operating system gate.");
 }
 GRUB_MOD_FINI (bourgeois)

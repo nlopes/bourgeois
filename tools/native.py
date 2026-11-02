@@ -55,6 +55,7 @@ cd grub2-unsigned-2.12
 cp /home/bourgeois/fancy/bourgeois.c grub-core/commands/
 cp /home/bourgeois/fancy/state.h grub-core/commands/
 cp /home/bourgeois/fancy/layout.h grub-core/commands/
+cp /home/bourgeois/fancy/pixels.h grub-core/commands/
 if ! grep -q 'name = bourgeois;' grub-core/Makefile.core.def; then
   cat >> grub-core/Makefile.core.def <<'EOF'
 module = {

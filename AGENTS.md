@@ -22,6 +22,7 @@ Keep the README focused on the project and its setup.
 - Preserve GRUB's native boot commands, entry IDs, authentication, and recovery paths. Generate boot entries from the distribution configuration.
 - Slim keeps the distribution EFI binary unchanged. Use the compact two-entry menu with Up/Down and Enter. The lab's lowercase `l`/`w` shortcuts boot immediately; the host artwork follows the existing menu's controls and shows a static hero at the selected door.
 - Fancy uses a native module in a separate EFI image. Left/Right walks; Space enters only at a gate; L/W boots immediately.
+- Both editions use rear-facing gate poses that look up at the nameplates. Fancy adds twinkling stars and a short inward turn/step on Space, and keeps the hero in GRUB's boot handoff background.
 - Keep Linux and Windows as the two OS choices. Default to Linux after 30 seconds, cancel the timer on input, and keep Esc as the route to the technical menu.
 - Keep the shared stone nameplates in the background artwork and preserve each edition's title, controls, and visual layout. See `assets/README.adoc` for asset sources.
 - Keep host snapshots, firmware identifiers, trust hashes, hardware inventories, and private logs in ignored `build/` storage. Use synthetic identifiers in committed fixtures and publish only captures without host details or personal metadata.
@@ -34,7 +35,7 @@ See the README for setup and verified commands.
 
 - `make vm` starts the disposable Ubuntu guest.
 - `make screenshot` captures its display under `build/evidence/`.
-- `make test` runs the Python tests and C controller, layout, and command tests.
+- `make test` runs the Python tests and C controller, layout, pixel blending, and command tests.
 - `make test-c` runs only the host C tests with compiler warnings treated as errors.
 - `make analyze-c` runs Clang static analysis on the host C tests and included module.
 - `make sanitize-c CC=clang` runs the C tests with AddressSanitizer and UndefinedBehaviorSanitizer.

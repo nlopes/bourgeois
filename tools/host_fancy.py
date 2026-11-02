@@ -187,7 +187,7 @@ def stage(source, build, snapshot, output, pesign, module_source=None):
     (output / 'bootstrap.cfg').write_text(bootstrap(uuid))
     assets = output / 'bourgeois'
     assets.mkdir()
-    for name in ('courtyard-nameplates.png', 'traveler.png'):
+    for name in ('courtyard-nameplates.png', 'traveler.png', 'traveler-gates.png'):
         shutil.copyfile(ROOT / 'assets' / name, assets / name)
     shutil.copyfile(ROOT / 'assets/DejaVu-font-license.txt', assets / 'font-license.txt')
     shutil.copyfile('/usr/share/grub/unicode.pf2', assets / 'unicode.pf2')

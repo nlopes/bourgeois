@@ -183,6 +183,43 @@ def run(edition, case):
         lab.send_key('spc')
         wait_for(serial, 'BOURGEOIS_WINDOWS_FIXTURE', serial_offset)
         print('PASS fancy: walking and reversal did not boot; Space at Windows routed fixture')
+    elif case == 'stars':
+        from PIL import Image, ImageChops
+        assert edition == 'fancy'
+        lab.send_key('spc')
+        time.sleep(0.3)
+        capture('fancy-stars-first')
+        time.sleep(0.7)
+        capture('fancy-stars-second')
+        with Image.open(lab.BUILD / 'evidence/fancy-stars-first.png') as first, \
+                Image.open(lab.BUILD / 'evidence/fancy-stars-second.png') as second:
+            changed = ImageChops.difference(first.convert('RGB'), second.convert('RGB')).getbbox()
+            assert changed and changed[3] < first.height * 0.12, changed
+        print('PASS fancy: stars changed while the paused scene stayed still')
+    elif case == 'doors':
+        from PIL import Image, ImageChops
+        assert edition == 'slim'
+        lab.send_key('spc')
+        time.sleep(0.5)
+        capture('slim-linux-gate')
+        lab.send_key('down')
+        time.sleep(0.5)
+        capture('slim-windows-gate')
+        with Image.open(lab.BUILD / 'evidence/slim-linux-gate.png') as linux, \
+                Image.open(lab.BUILD / 'evidence/slim-windows-gate.png') as windows:
+            for left, right in ((0.14, 0.25), (0.76, 0.87)):
+                region = (round(linux.width * left), round(linux.height * 0.59),
+                          round(linux.width * right), round(linux.height * 0.74))
+                assert ImageChops.difference(linux.crop(region).convert('RGB'),
+                                            windows.crop(region).convert('RGB')).getbbox()
+        lab.send_key('up')
+        time.sleep(0.5)
+        capture('slim-linux-returned')
+        with Image.open(lab.BUILD / 'evidence/slim-linux-gate.png') as first, \
+                Image.open(lab.BUILD / 'evidence/slim-linux-returned.png') as returned:
+            assert not ImageChops.difference(first.convert('RGB'),
+                                             returned.convert('RGB')).getbbox()
+        print('PASS slim: Up/Down moved the hero between gates and restored Linux')
     else:
         raise ValueError(case)
     result = dict(edition=edition, case=case, elapsed_seconds=round(time.monotonic() - ready, 2))
@@ -193,7 +230,7 @@ def run(edition, case):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('case', choices=['all', 'timeout', 'cancel', 'windows', 'linux', 'technical', 'walking', 'fallbacks'])
+    parser.add_argument('case', choices=['all', 'timeout', 'cancel', 'windows', 'linux', 'technical', 'walking', 'stars', 'doors', 'fallbacks'])
     args = parser.parse_args()
     lock = (lab.VM / 'boot-test.lock').open('w')
     try:
@@ -201,7 +238,7 @@ if __name__ == '__main__':
     except BlockingIOError:
         parser.error('Another boot test is using this VM')
     edition = json.loads((lab.BUILD / 'preview.json').read_text())['edition']
-    cases = (['cancel', 'walking', 'technical', 'windows', 'linux', 'timeout'] if edition == 'fancy'
-             else ['cancel', 'technical', 'windows', 'linux', 'timeout']) if args.case == 'all' else [args.case]
+    cases = (['cancel', 'stars', 'walking', 'technical', 'windows', 'linux', 'timeout'] if edition == 'fancy'
+             else ['cancel', 'doors', 'technical', 'windows', 'linux', 'timeout']) if args.case == 'all' else [args.case]
     for case in cases:
         run(edition, case)

@@ -208,6 +208,22 @@ A fresh default build reproduced the exact tested image.
 See xref:host-fancy.adoc[the host guide] for exact commands and rollback using a privately reviewed stage.
 The restored default passes 82 Python tests and the C controller and layout checks.
 
+== Gate poses and stars
+
+The 2026-11-02 update adds independently twinkling stars, rear-facing gate poses, and a 240-millisecond turn and step on Space.
+Both editions share the new pose sheet.
+Fancy transfers a courtyard bitmap with the selected traveler to the terminal background, so boot messages retain the hero.
+
+The strict native build passed against Ubuntu GRUB `2.12-1ubuntu7.3` in the disposable guest.
+The Python suite ran 84 tests: 81 passed and three font-dependent checks were skipped on macOS.
+The C controller, layout, pixel blending, and command checks passed.
+Clang static analysis, AddressSanitizer, UndefinedBehaviorSanitizer, and GCC warning checks passed.
+The Fancy guest suite passed cancellation, independent star changes, walking and reversal, Space at Windows, Esc recovery, immediate L/W, and the untouched Linux countdown.
+Actual captures showed the gate poses, inward turn, and traveler behind the returned Windows fixture's boot message.
+The Slim guest suite passed cancellation, Esc recovery, L/W routing, and the untouched Linux countdown.
+An additional Up/Down check captured both rear gate poses and confirmed that switching back to Linux restored the same complete scene.
+This update has not been tested on the physical host or with real Windows chainloading.
+
 == Validation limits
 
 An additional stock GRUB 2.14 UEFI rendering check on the Linux host reproduced the centered black handoff rectangle.

@@ -9,6 +9,12 @@ main (void)
                          {1920, 1080}, {2560, 1440}, {3840, 2160},
                          {7680, 4320}, {800, 4320}};
   unsigned i;
+  assert (scene_star_light (0, 0) == 0);
+  assert (scene_star_light (1100, 0) == 255);
+  assert (scene_star_light (2200, 0) == 0);
+  assert (scene_star_light (0, 1) != scene_star_light (0, 0));
+  for (i = 0; i < 10000; i++)
+    assert (scene_star_light (i, 8) <= 255);
   assert (scene_ui_scale (800, 600) == 1);
   assert (scene_ui_scale (1280, 720) == 1);
   assert (scene_ui_scale (2560, 1440) == 2);

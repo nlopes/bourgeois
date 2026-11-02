@@ -17,4 +17,13 @@ scene_ui_scale (unsigned width, unsigned height)
   return scale;
 }
 
+static unsigned
+scene_star_light (unsigned long long now, unsigned star)
+{
+  unsigned period = 2200 + star * 173;
+  unsigned phase = (now % period + star * 337) % period;
+  unsigned half = period / 2;
+  return phase <= half ? phase * 255 / half : (period - phase) * 255 / (period - half);
+}
+
 #endif

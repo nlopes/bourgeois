@@ -8,12 +8,14 @@
 enum failure
 {
   MODE, VIEWPORT, INFO, RESTORE, CONSOLE, GFXTERM, WINDOW, BACKGROUND,
-  SPRITES, SCALE, MIRROR, AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP
+  SPRITES, SCALE, MIRROR, AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP,
+  POSES, HANDOFF_SCALE
 };
 enum terminal { CONSOLE_ACTIVE, GFXTERM_ACTIVE };
 static unsigned failures;
 static unsigned recovery_calls, window_calls, live_bitmaps, load_calls, create_calls;
-static unsigned draw_calls, key_calls;
+static unsigned draw_calls, key_calls, scale_calls, gate_frames;
+static unsigned terminal_width, terminal_height;
 static enum terminal output;
 static int functional, video_active, no_menu, clock_step;
 static grub_uint64_t clock_now;
@@ -22,9 +24,11 @@ static struct grub_font loaded_font;
 static struct grub_command registered_command;
 static struct grub_menu_entry linux_entry, windows_entry, extra_entry;
 static struct grub_menu test_menu;
-static int inputs[4];
+static int inputs[64];
 static char *arguments[] = { (char *) "linux", (char *) "windows",
-                            (char *) "background.png", (char *) "sprites.png" };
+                            (char *) "background.png", (char *) "sprites.png",
+                            (char *) "gates.png" };
+struct grub_gfxterm_background grub_gfxterm_background;
 grub_err_t grub_errno;
 char grub_errmsg[GRUB_MAX_ERRMSG];
 
@@ -40,8 +44,13 @@ fail (enum failure operation)
 static void
 reset (void)
 {
+  grub_video_bitmap_destroy (grub_gfxterm_background.bitmap);
+  grub_gfxterm_background.bitmap = NULL;
   assert (live_bitmaps == 0);
   failures = recovery_calls = window_calls = load_calls = create_calls = draw_calls = key_calls = 0;
+  scale_calls = gate_frames = 0;
+  terminal_width = 800;
+  terminal_height = 600;
   functional = video_active = 1;
   no_menu = 0;
   output = GFXTERM_ACTIVE;
@@ -60,15 +69,16 @@ reset (void)
   test_menu = (struct grub_menu) { .size = 2, .entry_list = &linux_entry };
   arguments[0] = (char *) "linux";
   arguments[1] = (char *) "windows";
+  memset (inputs, 0, sizeof inputs);
   inputs[0] = 'l';
-  inputs[1] = inputs[2] = inputs[3] = GRUB_TERM_ESC;
+  inputs[1] = GRUB_TERM_ESC;
 }
 
 static grub_err_t
 run (void)
 {
-  grub_err_t err = run_scene (NULL, 4, arguments);
-  assert (live_bitmaps == 0);
+  grub_err_t err = run_scene (NULL, 5, arguments);
+  assert (live_bitmaps == (grub_gfxterm_background.bitmap ? 1U : 0U));
   return err;
 }
 
@@ -80,6 +90,15 @@ selection (void)
   linux_entry.id = arguments[0];
   assert (run () == GRUB_ERR_NONE);
   assert (strcmp (default_value, "0") == 0);
+  assert (grub_gfxterm_background.bitmap && grub_gfxterm_background.blend_text_bg);
+  {
+    unsigned x = SCENE_LINUX_GATE_X * 800 / SCENE_WIDTH;
+    unsigned char *pixel = grub_gfxterm_background.bitmap->data;
+    pixel += (600 * 73 / 100 - 600 / 7 + 10) * 800 * 4 + x * 4;
+    assert (pixel[0] == 30 && pixel[1] == 120 && pixel[2] == 70);
+  }
+  key_calls = 0;
+  assert (run () == GRUB_ERR_NONE);
   reset ();
   linux_entry.title = "windows";
   inputs[0] = 'w';
@@ -172,7 +191,7 @@ static void
 failures_before_boot (void)
 {
   enum failure operations[] = { VIEWPORT, BACKGROUND, SPRITES, SCALE, MIRROR,
-                                AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP };
+                                AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP, POSES };
   unsigned i;
   for (i = 0; i < sizeof operations / sizeof operations[0]; i++)
     {
@@ -190,6 +209,32 @@ failures_before_boot (void)
   failures = (1U << BACKGROUND) | (1U << GFXTERM);
   assert (run () != GRUB_ERR_NONE);
   assert (strstr (grub_errmsg, "injected failure 7") != NULL);
+}
+
+static void
+enter_and_handoff (void)
+{
+  unsigned i;
+  reset ();
+  clock_step = 100;
+  for (i = 0; i < 64; i++)
+    inputs[i] = GRUB_TERM_NO_KEY;
+  inputs[0] = GRUB_TERM_KEY_RIGHT;
+  inputs[8] = ' ';
+  assert (run () == GRUB_ERR_NONE);
+  assert ((gate_frames & 13) == 13);
+  assert (strcmp (default_value, "1") == 0);
+  reset ();
+  terminal_width = 1024;
+  terminal_height = 768;
+  assert (run () == GRUB_ERR_NONE);
+  assert (grub_gfxterm_background.bitmap->mode_info.width == 1024);
+  reset ();
+  terminal_width = 1024;
+  failures = 1U << HANDOFF_SCALE;
+  assert (run () != GRUB_ERR_NONE);
+  assert (grub_gfxterm_background.bitmap == NULL && functional);
+  assert (strcmp (timeout_value, "-1") == 0);
 }
 
 static void
@@ -212,7 +257,7 @@ main (int argc, char **argv)
     { "selection", selection }, { "recovery", recovery },
     { "mode", mode_failure }, { "fallback", fallback }, { "font", missing_font },
     { "entries", invalid_entries }, { "failures", failures_before_boot },
-    { "render", render_and_escape }
+    { "render", render_and_escape }, { "enter", enter_and_handoff }
   };
   unsigned i;
   for (i = 0; i < sizeof cases / sizeof cases[0]; i++)
@@ -221,6 +266,8 @@ main (int argc, char **argv)
         cases[i].test ();
         printf ("PASS command: %s\n", cases[i].name);
       }
+  grub_video_bitmap_destroy (grub_gfxterm_background.bitmap);
+  assert (live_bitmaps == 0);
   return 0;
 }
 
@@ -338,7 +385,7 @@ grub_err_t
 grub_video_get_info (struct grub_video_mode_info *info)
 {
   if (fail (INFO)) return GRUB_ERR_TEST_FAILURE;
-  *info = (struct grub_video_mode_info) { .width = 800, .height = 600 };
+  *info = (struct grub_video_mode_info) { .width = terminal_width, .height = terminal_height };
   return GRUB_ERR_NONE;
 }
 grub_err_t grub_video_restore (void)
@@ -355,6 +402,8 @@ grub_video_blit_bitmap (struct grub_video_bitmap *bitmap, int operation,
   assert (bitmap && video_active && sx >= 0 && sy >= 0);
   assert ((unsigned) sx + w <= bitmap->mode_info.width);
   assert ((unsigned) sy + h <= bitmap->mode_info.height);
+  if (bitmap->mode_info.width == (600 / 7 * 3 / 4) * 4 && w)
+    gate_frames |= 1U << ((unsigned) sx / w);
   draw_calls++;
   return fail (DRAW) ? GRUB_ERR_TEST_FAILURE : GRUB_ERR_NONE;
 }
@@ -379,19 +428,44 @@ grub_video_bitmap_create (struct grub_video_bitmap **bitmap, unsigned w, unsigne
 grub_err_t
 grub_video_bitmap_load (struct grub_video_bitmap **bitmap, const char *path)
 {
+  unsigned i;
+  grub_err_t err;
   (void) path;
   load_calls++;
+  if (load_calls == 3 && fail (POSES)) return GRUB_ERR_TEST_FAILURE;
   if (fail (load_calls == 1 ? BACKGROUND : SPRITES)) return GRUB_ERR_TEST_FAILURE;
-  return grub_video_bitmap_create (bitmap, 4, 1, 0);
+  err = grub_video_bitmap_create (bitmap, 4, 1, 0);
+  if (err)
+    return err;
+  for (i = 0; i < 4; i++)
+    {
+      unsigned char *pixel = (unsigned char *) (*bitmap)->data + i * 4;
+      pixel[0] = load_calls == 3 ? 30 : 20;
+      pixel[1] = load_calls == 3 ? 120 : 30;
+      pixel[2] = load_calls == 3 ? 70 : 60;
+      pixel[3] = 255;
+    }
+  return GRUB_ERR_NONE;
 }
 grub_err_t
 grub_video_bitmap_create_scaled (struct grub_video_bitmap **bitmap, int w, int h,
                                  struct grub_video_bitmap *src, int method)
 {
+  grub_err_t err;
+  unsigned row, col;
   (void) method;
   assert (src && w > 0 && h > 0);
+  scale_calls++;
+  if (scale_calls == 4 && fail (HANDOFF_SCALE)) return GRUB_ERR_TEST_FAILURE;
   if (fail (SCALE)) return GRUB_ERR_TEST_FAILURE;
-  return grub_video_bitmap_create (bitmap, (unsigned) w, (unsigned) h, 0);
+  err = grub_video_bitmap_create (bitmap, (unsigned) w, (unsigned) h, 0);
+  if (err)
+    return err;
+  for (row = 0; row < (unsigned) h; row++)
+    for (col = 0; col < (unsigned) w; col++)
+      memcpy ((unsigned char *) (*bitmap)->data + row * (*bitmap)->mode_info.pitch + col * 4,
+              src->data, 4);
+  return GRUB_ERR_NONE;
 }
 grub_err_t
 grub_video_bitmap_destroy (struct grub_video_bitmap *bitmap)
@@ -418,5 +492,6 @@ grub_gfxterm_set_window (struct grub_video_render_target *target, int x, int y,
   return GRUB_ERR_NONE;
 }
 grub_uint64_t grub_get_time_ms (void) { clock_now += (unsigned) clock_step; return clock_now; }
-int grub_getkey_noblock (void) { assert (key_calls < 4); return inputs[key_calls++]; }
+int grub_getkey_noblock (void) { assert (key_calls < 64); return inputs[key_calls++]; }
 void grub_millisleep (grub_uint64_t duration) { (void) duration; }
+void grub_gfxterm_schedule_repaint (void) { assert (functional); }

@@ -12,6 +12,7 @@ import tarfile
 import lab
 from grub_config import generate, hook, blocks, entry_id
 import theme
+import hero
 
 STAGE = lab.BUILD / 'preview'
 
@@ -43,7 +44,7 @@ def prepare(edition):
     lab.ssh('sudo rm -f /etc/grub.d/99_bourgeois')
     put_text('/tmp/41_windows_fixture', '''#!/bin/sh
 cat <<'EOF'
-menuentry 'Windows routing fixture' --id bourgeois-windows-fixture {
+menuentry 'Windows routing fixture' --class windows --id bourgeois-windows-fixture {
   serial --unit=0 --speed=115200
   terminal_output --append serial
   echo BOURGEOIS_WINDOWS_FIXTURE
@@ -77,11 +78,15 @@ EOF
         ('unavailable-mode', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=12345x6789\n  insmod bourgeois')),
     ):
         (STAGE / f'test-{name}.cfg').write_text(source + modified)
-    theme.build(STAGE)
-    for asset in ('courtyard.png', 'courtyard-nameplates.png', 'traveler.png'):
+    theme.build(STAGE, icon_size=1 if edition == 'slim' else 0)
+    if edition == 'slim':
+        hero.icons(STAGE, 800, 600)
+        theme_file = STAGE / 'theme.txt'
+        theme_file.write_text(theme_file.read_text() + hero.view(800, 600))
+    for asset in ('courtyard.png', 'courtyard-nameplates.png', 'traveler.png', 'traveler-gates.png'):
         shutil.copyfile(lab.ROOT / 'assets' / asset, STAGE / asset)
     upload(STAGE, '/home/bourgeois/preview')
-    lab.ssh('sudo grub-script-check /home/bourgeois/preview/scene.cfg && sudo mkdir -p /boot/grub/bourgeois && sudo cp /home/bourgeois/preview/* /boot/grub/bourgeois/')
+    lab.ssh('sudo grub-script-check /home/bourgeois/preview/scene.cfg && sudo mkdir -p /boot/grub/bourgeois && sudo cp -R /home/bourgeois/preview/* /boot/grub/bourgeois/')
     if edition == 'fancy':
         lab.ssh('sudo cp /home/bourgeois/native-fonts/*.pf2 /boot/grub/bourgeois/')
         put_text('/home/bourgeois/menu-font-license.txt',

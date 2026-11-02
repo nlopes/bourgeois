@@ -27,6 +27,7 @@ enum { GRUB_VIDEO_MODE_TYPE_PURE_TEXT = 1,
        GRUB_VIDEO_MODE_TYPE_UPDATING_SWAP = 4 };
 enum { GRUB_VIDEO_BLIT_REPLACE, GRUB_VIDEO_BLIT_BLEND,
        GRUB_VIDEO_BITMAP_SCALE_METHOD_NEAREST };
+enum { GRUB_VIDEO_BLIT_FORMAT_RGBA_8888, GRUB_VIDEO_BLIT_FORMAT_RGB_888 };
 enum { GRUB_TERM_NO_KEY = -1, GRUB_TERM_ESC = 27,
        GRUB_TERM_KEY_LEFT = 1000, GRUB_TERM_KEY_RIGHT };
 #define GRUB_VIDEO_RENDER_TARGET_DISPLAY NULL
@@ -58,6 +59,13 @@ struct grub_video_bitmap
   void *data;
 };
 struct grub_video_render_target;
+struct grub_gfxterm_background
+{
+  struct grub_video_bitmap *bitmap;
+  int blend_text_bg;
+};
+extern struct grub_gfxterm_background grub_gfxterm_background;
+void grub_gfxterm_schedule_repaint (void);
 
 extern grub_err_t grub_errno;
 extern char grub_errmsg[GRUB_MAX_ERRMSG];

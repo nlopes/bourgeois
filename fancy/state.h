@@ -12,7 +12,8 @@ enum { SCENE_WIDTH = 2400,
        SCENE_WINDOWS_GATE_X = 1358 * SCENE_WIDTH / 1672 };
 struct scene_state
 {
-  unsigned long long started, move_started;
+  unsigned long long started, move_started, enter_started;
+  enum scene_action entering;
   int x, origin, target, facing_left, cancelled, remaining;
 };
 
@@ -24,6 +25,20 @@ scene_init (struct scene_state *s, unsigned long long now)
   s->facing_left = 0;
   s->cancelled = 0;
   s->remaining = 30000;
+  s->enter_started = now;
+  s->entering = SCENE_WAIT;
+}
+
+static int
+scene_gate_frame (const struct scene_state *s, unsigned long long now)
+{
+  if (s->entering != SCENE_WAIT)
+    return now - s->enter_started < 120 ? 2 : 3;
+  if (s->x == SCENE_LINUX_GATE_X)
+    return 1;
+  if (s->x == SCENE_WINDOWS_GATE_X)
+    return 0;
+  return -1;
 }
 
 static enum scene_action
@@ -47,13 +62,23 @@ scene_step (struct scene_state *s, unsigned long long now, enum scene_key key)
     }
   if (key == SCENE_ESCAPE)
     return SCENE_TECHNICAL;
-  if (key == SCENE_LINUX || (key == SCENE_SPACE && s->x == SCENE_LINUX_GATE_X))
+  if (key == SCENE_LINUX)
     return SCENE_BOOT_LINUX;
-  if (key == SCENE_WINDOWS || (key == SCENE_SPACE && s->x == SCENE_WINDOWS_GATE_X))
+  if (key == SCENE_WINDOWS)
     return SCENE_BOOT_WINDOWS;
+  if (s->entering != SCENE_WAIT && key != SCENE_LEFT && key != SCENE_RIGHT)
+    return now - s->enter_started >= 240 ? s->entering : SCENE_WAIT;
+  if (key == SCENE_SPACE
+      && (s->x == SCENE_LINUX_GATE_X || s->x == SCENE_WINDOWS_GATE_X))
+    {
+      s->entering = s->x == SCENE_LINUX_GATE_X ? SCENE_BOOT_LINUX : SCENE_BOOT_WINDOWS;
+      s->enter_started = now;
+      return SCENE_WAIT;
+    }
   if (key == SCENE_LEFT || key == SCENE_RIGHT)
     {
       int target = key == SCENE_LEFT ? SCENE_LINUX_GATE_X : SCENE_WINDOWS_GATE_X;
+      s->entering = SCENE_WAIT;
       /* Keep facing explicit: zero travel distance has no direction. */
       s->facing_left = key == SCENE_LEFT;
       /* Keyboard repeat must not restart interpolation or lose fractional

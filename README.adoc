@@ -12,6 +12,7 @@ A bourgeois grub with a taste of adventure games.
 bourgeois themes GRUB while preserving its existing OS boot logic and recovery paths.
 Slim uses the unchanged distribution binary and a hero that snaps between doors.
 Fancy adds a native GRUB module for walking and animated sand.
+At a gate, both editions show the traveler from behind, looking up toward the stone nameplate.
 
 image::docs/research/mockups/fancy-demo.gif[Fancy walks left to right to left and selects Linux,960]
 
@@ -71,6 +72,7 @@ Up/Down selects an entry and Enter boots it.
 Any input cancels the 30-second automatic Linux boot.
 The Windows choice is a routing fixture that prints a marker and returns.
 The hourglass image is static in slim; its surrounding ring and seconds label count down.
+The lab's Slim hero icons are staged for 800x600; the host builder sizes its icons for `HOST_SIZE`.
 The distribution's GRUB EFI binary stays unchanged.
 The boot handoff and command line use a full-screen terminal instead of a centered box over the scene.
 The host artwork variant shows a static traveler at the selected door; Fancy adds walking.
@@ -149,8 +151,10 @@ make fancy
 python3 tools/lab.py reset
 ----
 
-Left/Right walks to a gate; Space enters at the threshold.
+Left/Right walks to a gate; Space turns the traveler fully inward and takes a small step at the threshold.
+The entry sequence lasts 240 milliseconds; Esc can still return to the technical menu during it.
 L/W boots immediately and Esc returns to Ubuntu's technical menu.
+Small stars twinkle independently in the night sky.
 The animated sand and live seconds share the 30-second Linux timer.
 Input cancels automatic boot for that visit; the original hourglass reads `PAUSED` and never resumes.
 Full-scene rendering now uses a 17-millisecond frame budget, confirmed visible in a physical trial.
@@ -159,7 +163,7 @@ This permits up to about 59 FPS when drawing fits the budget; actual performance
 See xref:docs/research/fancy-performance.adoc[the performance record and physical trial limits].
 Fancy inherits GRUB's display mode and scales its text and hourglass for the actual resolution.
 Its centered gate prompts, walking behavior, and draining sand retain their own layout.
-Boot messages keep the courtyard visible in a full-screen terminal.
+Boot messages keep the courtyard and the selected gate's hero visible in a full-screen terminal.
 The same `make host-gpus` and `make host-gpu-select` commands provide firmware display guidance for both editions.
 The tools install a separate EFI file and boot entry inside the disposable guest.
 They keep Ubuntu's original EFI binary intact.
@@ -190,7 +194,7 @@ Set `HOST_FANCY_DEMO` to a fresh directory for another recording.
 == Checks and packages
 
 `make test` runs the Python and C checks without a VM.
-`make test-c` runs only the C controller, layout, and command tests.
+`make test-c` runs only the C controller, layout, pixel blending, and command tests.
 The command tests compile the module with GRUB service doubles and inject failures at the menu, graphics, authentication, and asset boundaries.
 The native build compiles against the real GRUB headers and verifies the generated module separately.
 Use Clang for static analysis and a compiler with AddressSanitizer and UndefinedBehaviorSanitizer for runtime checks:

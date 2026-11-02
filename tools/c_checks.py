@@ -8,7 +8,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / 'build' / 'c-checks'
-TESTS = ('state', 'layout', 'command')
+TESTS = ('state', 'layout', 'pixels', 'command')
 
 
 def check(mode):
@@ -21,7 +21,7 @@ def check(mode):
         header.write_text('#include "grub_test.h"\n')
     compiler = shlex.split(os.environ.get('CLANG' if mode == 'analyze' else 'CC',
                                          'clang' if mode == 'analyze' else 'cc'))
-    flags = ['-std=c99', '-Wall', '-Wextra', '-Werror', '-Wformat=2',
+    flags = ['-std=c99', '-Wall', '-Wextra', '-Werror', '-Wsign-compare', '-Wformat=2',
              '-Wstrict-prototypes', '-I' + str(includes), '-I' + str(ROOT / 'fancy')]
     if mode == 'sanitize':
         flags += ['-g', '-O1', '-fno-omit-frame-pointer', '-fsanitize=address,undefined',

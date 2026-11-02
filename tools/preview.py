@@ -74,6 +74,7 @@ EOF
         ('800x600', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=800x600\n  insmod bourgeois')),
         ('2560x1440', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set gfxmode=2560x1440,auto\n  set bourgeois_gfxmode=\n  insmod bourgeois')),
         ('unsupported-mode', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=640x480\n  insmod bourgeois')),
+        ('unavailable-mode', hook('fancy', linux, windows).replace('  insmod bourgeois', '  set bourgeois_gfxmode=12345x6789\n  insmod bourgeois')),
     ):
         (STAGE / f'test-{name}.cfg').write_text(source + modified)
     theme.build(STAGE)

@@ -11,7 +11,7 @@ Development targets Ubuntu 24.04 x86_64 UEFI in a disposable QEMU guest.
 - `docs/research/mockups/` contains concept boards, generation prompts, and runtime captures.
 - `tools/` contains Python build and VM tooling, with tests beside the code.
 - `assets/` contains shared PNG artwork and generation prompts.
-- `fancy/` contains the GPLv3+ native GRUB module, isolated trial patches, and its license.
+- `fancy/` contains the GPLv3+ native GRUB module, host C tests and GRUB service doubles, isolated trial patches, and its license.
 - `build/` contains ignored guest disks, keys, caches, and evidence.
 
 Add implementation directories when needed, and document their purpose here.
@@ -34,7 +34,10 @@ See the README for setup and verified commands.
 
 - `make vm` starts the disposable Ubuntu guest.
 - `make screenshot` captures its display under `build/evidence/`.
-- `make test` runs the Python tests and C controller/layout tests.
+- `make test` runs the Python tests and C controller, layout, and command tests.
+- `make test-c` runs only the host C tests with compiler warnings treated as errors.
+- `make analyze-c` runs Clang static analysis on the host C tests and included module.
+- `make sanitize-c CC=clang` runs the C tests with AddressSanitizer and UndefinedBehaviorSanitizer.
 - `make lab-preflight` checks the local VM tools and reports missing packages.
 - `make slim` installs the stock-binary theme in the guest.
 - `make host-doctor` checks host dependencies and reports graphics adapters without changes.

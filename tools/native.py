@@ -68,7 +68,7 @@ fi
 if [ ! -f Makefile ]; then
 ./configure --with-platform=efi --target=x86_64 --disable-werror --disable-nls --disable-efiemu --disable-grub-mkfont
 fi
-make -C grub-core -j2 bourgeois.module build-grub-module-verifier genmod.sh
+make -C grub-core -j2 'bourgeois_module_CFLAGS=$(AM_CFLAGS) $(CFLAGS_MODULE) -Werror' bourgeois.module build-grub-module-verifier genmod.sh
 rm -rf /home/bourgeois/native-modules
 cp -a /usr/lib/grub/x86_64-efi /home/bourgeois/native-modules
 printf 'bourgeois: bitmap_scale font video normal bitmap gfxmenu gfxterm gfxterm_background\n' >> /home/bourgeois/native-modules/moddep.lst

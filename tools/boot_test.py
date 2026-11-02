@@ -137,7 +137,7 @@ def run(edition, case):
         capture(f'{edition}-command-line')
         print(f'CAPTURED {edition}: technical menu, editor, command line (inspect images)')
     elif case == 'fallbacks':
-        for name in ('missing-asset', 'missing-module', 'missing-id', 'unsupported-mode', 'recordfail', 'one-shot', '1024x768', '800x600', '2560x1440'):
+        for name in ('missing-asset', 'missing-module', 'missing-id', 'unsupported-mode', 'unavailable-mode', 'recordfail', 'one-shot', '1024x768', '800x600', '2560x1440'):
             log, offset, ready = reboot_scene(edition)
             lab.send_key('esc')
             time.sleep(1)

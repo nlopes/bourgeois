@@ -12,7 +12,6 @@
 #include <grub/gfxmenu_view.h>
 #include <grub/menu.h>
 #include <grub/misc.h>
-#include <grub/mm.h>
 #include <grub/normal.h>
 #include <grub/term.h>
 #include <grub/time.h>
@@ -155,16 +154,25 @@ key (int value)
     }
 }
 
-static int
-has_entry (const char *id)
+static grub_menu_entry_t
+find_entry (const char *id, unsigned *index)
 {
   grub_menu_t menu = grub_env_get_menu ();
-  grub_menu_entry_t entry;
-  int found = 0;
+  grub_menu_entry_t entry, found = 0;
+  unsigned position = 0;
   for (entry = menu ? menu->entry_list : 0; entry; entry = entry->next)
-    if (!entry->submenu && entry->id && grub_strcmp (entry->id, id) == 0)
-      found++;
-  return found == 1;
+    {
+      if (entry->id && grub_strcmp (entry->id, id) == 0)
+        {
+          if (found || entry->submenu)
+            return 0;
+          found = entry;
+          if (index)
+            *index = position;
+        }
+      position++;
+    }
+  return found;
 }
 
 static grub_err_t
@@ -180,27 +188,114 @@ load_scaled (struct grub_video_bitmap **result, const char *path, int w, int h)
 }
 
 static grub_err_t
+select_entry (const char *id, int manual)
+{
+  unsigned index;
+  char number[24];
+  grub_menu_entry_t entry = find_entry (id, &index);
+  grub_err_t err;
+  if (!entry)
+    return grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: entry ID is no longer unique");
+  if (entry->restricted)
+    {
+      err = grub_auth_check_authentication (entry->users);
+      if (err)
+        return err;
+    }
+  /* GRUB resolves default as a number or title before trying entry IDs. */
+  grub_snprintf (number, sizeof number, "%u", index);
+  err = grub_env_set ("default", number);
+  if (!err)
+    err = grub_env_set ("timeout", "0");
+  if (!err && manual)
+    grub_env_unset ("fallback");
+  return err;
+}
+
+static grub_err_t
+restore_terminal (const char *background, grub_font_t scene_font)
+{
+  char *console[] = { (char *) "console" };
+  char *terminal[] = { (char *) "gfxterm" };
+  char *image[] = { (char *) "--mode=stretch", (char *) background };
+  struct grub_video_mode_info info;
+  struct grub_error_saved saved;
+  grub_err_t err;
+
+  /* Disable gfxterm before replacing the adapter that owns its window. */
+  err = grub_command_execute ("terminal_output", 1, console);
+  if (err)
+    return err;
+  err = grub_video_restore ();
+  if (err)
+    return err;
+  err = grub_command_execute ("terminal_output", 1, terminal);
+  if (err)
+    goto console_fallback;
+  if (!scene_font)
+    return GRUB_ERR_NONE;
+
+  /* A former theme may have narrowed the terminal. Handoff messages belong
+     to a full-screen window with the courtyard behind them. */
+  err = grub_video_get_info (&info);
+  if (!err)
+    err = grub_gfxterm_set_window (GRUB_VIDEO_RENDER_TARGET_DISPLAY,
+                                  0, 0, info.width, info.height,
+                                  (info.mode_type & GRUB_VIDEO_MODE_TYPE_DOUBLE_BUFFERED)
+                                  && !(info.mode_type & GRUB_VIDEO_MODE_TYPE_UPDATING_SWAP),
+                                  scene_font, 0);
+  if (err)
+    goto console_fallback;
+  if (grub_command_execute ("background_image", 2, image))
+    {
+      trace ("BOURGEOIS_BACKGROUND_UNAVAILABLE");
+      grub_print_error ();
+    }
+  return GRUB_ERR_NONE;
+
+ console_fallback:
+  /* Window setup destroys the previous window even when its replacement
+     fails. Keep a usable console and preserve the setup error. */
+  saved.grub_errno = err;
+  grub_memcpy (saved.errmsg, grub_errmsg, sizeof saved.errmsg);
+  grub_errno = GRUB_ERR_NONE;
+  grub_command_execute ("terminal_output", 1, console);
+  grub_errno = saved.grub_errno;
+  grub_memcpy (grub_errmsg, saved.errmsg, sizeof saved.errmsg);
+  return err;
+}
+
+static grub_err_t
 run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
 {
   struct grub_video_bitmap *background = 0, *actor = 0, *left_actor = 0;
-  struct scene_state state;
+  struct scene_state state = { 0 };
   enum scene_action action = SCENE_WAIT;
-  grub_err_t err = GRUB_ERR_NONE;
+  grub_err_t err = GRUB_ERR_NONE, recovery_err;
+  struct grub_error_saved saved;
   unsigned x, y;
-  int active = 0, frame_width, frame_height;
+  int frame_width = 0, frame_height = 0;
   unsigned frames = 0, render_total = 0, render_max = 0;
+  char *console[] = { (char *) "console" };
   const char *mode = grub_env_get ("bourgeois_gfxmode");
   if (!mode || !*mode)
     mode = grub_env_get ("gfxmode");
-  if (argc != 4 || !has_entry (args[0]) || !has_entry (args[1])
+  if (argc != 4 || !find_entry (args[0], 0) || !find_entry (args[1], 0)
       || grub_strcmp (args[0], args[1]) == 0)
     return grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: expected two unique entry IDs and two assets");
+  err = grub_env_set ("timeout", "-1");
+  if (err)
+    return err;
+  err = grub_command_execute ("terminal_output", 1, console);
+  if (err)
+    return err;
   err = grub_video_set_mode (mode && *mode ? mode : "auto",
                             GRUB_VIDEO_MODE_TYPE_PURE_TEXT, 0);
   if (err)
-    return err;
-  active = 1;
-  grub_video_get_viewport (&x, &y, &width, &height);
+    goto done;
+  err = grub_video_get_viewport (&x, &y, &width, &height);
+  if (err)
+    goto done;
   if (width < 800 || height < 600)
     {
       err = grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: display must be at least 800x600");
@@ -211,9 +306,9 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
     char name[64];
     grub_snprintf (name, sizeof name, "Bourgeois UI Regular %u", 20 * ui_scale);
     font = grub_font_get (name);
-    if (!font)
+    if (!font || grub_strcmp (grub_font_get_name (font), name) != 0)
       {
-        err = grub_error (GRUB_ERR_BAD_FONT, "bourgeois: load a font first");
+        err = grub_error (GRUB_ERR_BAD_FONT, "bourgeois: load font `%s' first", name);
         goto done;
       }
   }
@@ -247,15 +342,20 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
         trace ("BOURGEOIS_TIMER_CANCELLED");
       if (action != SCENE_WAIT)
         break;
-      grub_video_blit_bitmap (background, GRUB_VIDEO_BLIT_REPLACE, 0, 0, 0, 0, width, height);
+      err = grub_video_blit_bitmap (background, GRUB_VIDEO_BLIT_REPLACE,
+                                    0, 0, 0, 0, width, height);
+      if (err)
+        goto done;
       label ("CHOOSE YOUR KINGDOM", width / 2, 49 * ui_scale, 1);
       label ("A journey begins with a door", width / 2, 72 * ui_scale, 0);
       {
         int frame = state.x != state.target ? (now / 140) % 4 : 0;
-        grub_video_blit_bitmap (state.facing_left ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
-                                state.x * width / SCENE_WIDTH - frame_width / 2,
-                                height * 73 / 100 - frame_height,
-                                frame * frame_width, 0, frame_width, frame_height);
+        err = grub_video_blit_bitmap (state.facing_left ? left_actor : actor, GRUB_VIDEO_BLIT_BLEND,
+                                      state.x * width / SCENE_WIDTH - frame_width / 2,
+                                      height * 73 / 100 - frame_height,
+                                      frame * frame_width, 0, frame_width, frame_height);
+        if (err)
+          goto done;
       }
       label (state.x == SCENE_LINUX_GATE_X ? "Space: enter Linux"
              : state.x == SCENE_WINDOWS_GATE_X ? "Space: enter Windows"
@@ -264,7 +364,11 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       label (state.cancelled ? "Auto-boot cancelled for this visit"
              : "Linux boots when the sand runs out", width / 2, height - 36 * ui_scale, 0);
       hourglass (&state, now);
-      grub_video_swap_buffers ();
+      err = grub_errno;
+      if (!err)
+        err = grub_video_swap_buffers ();
+      if (err)
+        goto done;
       {
         unsigned elapsed = grub_get_time_ms () - now;
         frames++;
@@ -289,56 +393,23 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
   grub_video_bitmap_destroy (left_actor);
   grub_video_bitmap_destroy (actor);
   grub_video_bitmap_destroy (background);
-  if (active)
+  saved.grub_errno = err;
+  grub_memcpy (saved.errmsg, grub_errmsg, sizeof saved.errmsg);
+  grub_errno = GRUB_ERR_NONE;
+  recovery_err = restore_terminal (args[2], err ? 0 : font);
+  if (err)
     {
-      char *console[] = { (char *) "console" };
-      char *terminal[] = { (char *) "gfxterm" };
-      grub_video_restore ();
-      /* Reinitialize the terminal after direct GOP rendering. Restoring the
-         EFI text mode alone can leave its graphical console blank. */
-      grub_command_execute ("terminal_output", 1, console);
-      if (!grub_command_execute ("terminal_output", 1, terminal) && !err)
-        {
-          struct grub_video_mode_info info;
-          char *image[] = { (char *) "--mode=stretch", args[2] };
-          /* A former theme may have narrowed the terminal. Handoff messages
-             belong to a full-screen window with the courtyard behind them. */
-          if (!grub_video_get_info (&info))
-            grub_gfxterm_set_window (GRUB_VIDEO_RENDER_TARGET_DISPLAY,
-                                     0, 0, info.width, info.height,
-                                     (info.mode_type & GRUB_VIDEO_MODE_TYPE_DOUBLE_BUFFERED)
-                                     && !(info.mode_type & GRUB_VIDEO_MODE_TYPE_UPDATING_SWAP),
-                                     font, 0);
-          if (grub_command_execute ("background_image", 2, image))
-            {
-              trace ("BOURGEOIS_BACKGROUND_UNAVAILABLE");
-              grub_print_error ();
-              grub_errno = GRUB_ERR_NONE;
-            }
-        }
+      grub_errno = saved.grub_errno;
+      grub_memcpy (grub_errmsg, saved.errmsg, sizeof saved.errmsg);
     }
-  grub_env_set ("timeout", "-1");
+  else
+    err = recovery_err;
   if (!err && (action == SCENE_BOOT_LINUX || action == SCENE_BOOT_WINDOWS))
     {
       const char *selected = args[action == SCENE_BOOT_LINUX ? 0 : 1];
-      grub_menu_entry_t entry;
-      for (entry = grub_env_get_menu ()->entry_list; entry; entry = entry->next)
-        if (entry->id && grub_strcmp (entry->id, selected) == 0)
-          {
-            /* Authenticate before arming timeout=0. A rejected password must
-               leave an interactive menu instead of retrying automatically. */
-            if (entry->restricted)
-              err = grub_auth_check_authentication (entry->users);
-            break;
-          }
+      err = select_entry (selected, state.cancelled);
       if (!err)
-        err = grub_env_set ("default", selected);
-      if (!err)
-        {
-          trace (action == SCENE_BOOT_LINUX ? "BOURGEOIS_SELECT_LINUX" : "BOURGEOIS_SELECT_WINDOWS");
-          grub_env_set ("timeout", "0");
-          grub_env_unset ("fallback");
-        }
+        trace (action == SCENE_BOOT_LINUX ? "BOURGEOIS_SELECT_LINUX" : "BOURGEOIS_SELECT_WINDOWS");
     }
   return err;
 }

@@ -32,7 +32,8 @@ Windows lab tests use a routing fixture.
 The separate Ubuntu 26.04 host workflow below covers the Secure Boot trial.
 Both editions use the same courtyard artwork with stone-framed OS nameplates.
 
-Install Python 3.11 or newer, a C compiler, Make, QEMU, xorriso, and OpenSSH.
+Install Python 3.11 or newer, Pillow, a C compiler, Make, QEMU, xorriso, and OpenSSH.
+Install Pillow in the Python environment selected by `PYTHON`.
 On macOS, install the VM tools with `brew install qemu xorriso`.
 On Ubuntu, install `qemu-system-x86`, `qemu-utils`, `ovmf`, `xorriso`, and `openssh-client`.
 
@@ -189,6 +190,23 @@ Set `HOST_FANCY_DEMO` to a fresh directory for another recording.
 == Checks and packages
 
 `make test` runs the Python and C checks without a VM.
+`make test-c` runs only the C controller, layout, and command tests.
+The command tests compile the module with GRUB service doubles and inject failures at the menu, graphics, authentication, and asset boundaries.
+The native build compiles against the real GRUB headers and verifies the generated module separately.
+Use Clang for static analysis and a compiler with AddressSanitizer and UndefinedBehaviorSanitizer for runtime checks:
+
+[source,shell]
+----
+make test-c
+make analyze-c
+make sanitize-c CC=clang
+----
+
+`make analyze-c` requires Clang and treats analyzer findings as errors.
+Set `CLANG` to select another Clang executable, or `CC` to select another test compiler.
+Generated test headers and binaries stay under `build/c-checks/`.
+Analyzer findings are printed in the terminal.
+On macOS, if temporary-path checks fail because `/var` resolves to `/private/var`, run `TMPDIR=/private/tmp make test`.
 After installing an edition in the running guest, `make boot-test` checks its input, boot, countdown, and recovery behavior.
 Run only one boot-test process against the VM at a time, and inspect the runtime captures under `build/evidence/`.
 After `make native-build` and `make fancy`, `make dist` packages both previews and checksums under `build/dist/`.

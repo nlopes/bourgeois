@@ -17,13 +17,15 @@ ssh:
 	$(PYTHON) tools/lab.py ssh
 screenshot:
 	$(PYTHON) tools/lab.py screenshot
-test:
+test: test-c
 	$(PYTHON) -m unittest discover -s tools -p '*_test.py' -v
-	mkdir -p build
-	$(CC) -std=c99 -Wall -Wextra -Werror fancy/state_test.c -o build/state-test
-	build/state-test
-	$(CC) -std=c99 -Wall -Wextra -Werror fancy/layout_test.c -o build/layout-test
-	build/layout-test
+.PHONY: test-c sanitize-c analyze-c
+test-c:
+	CC="$(CC)" $(PYTHON) tools/c_checks.py test
+sanitize-c:
+	CC="$(CC)" $(PYTHON) tools/c_checks.py sanitize
+analyze-c:
+	$(PYTHON) tools/c_checks.py analyze
 slim:
 	$(PYTHON) tools/preview.py slim
 host-python:

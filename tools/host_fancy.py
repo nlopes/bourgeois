@@ -122,7 +122,8 @@ def compile_module(source, build, module_source):
             '--disable-werror', '--disable-nls', '--disable-efiemu', '--disable-grub-mkfont',
             cwd=build, stdout=log, stderr=subprocess.STDOUT)
     incs = ['-I' + str(p) for p in (build, build / 'include', source, source / 'include')]
-    flags = '''-std=gnu99 -fno-common -Os -m64 -Wall -Wextra -ffreestanding
+    flags = '''-std=gnu99 -fno-common -Os -m64 -Wall -Wextra -Werror -Wformat=2
+    -Wstrict-prototypes -ffreestanding
     -fno-PIE -fno-pie -fno-stack-protector -mno-red-zone -mcmodel=large -mno-mmx
     -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow -msoft-float
     -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-ident'''.split()

@@ -23,7 +23,7 @@ Keep the README focused on the project and its setup.
 - Preserve GRUB's native boot commands, entry IDs, authentication, and recovery paths. Generate boot entries from the distribution configuration.
 - Slim keeps the distribution EFI binary unchanged. Use the compact two-entry menu with Up/Down and Enter. The lab's lowercase `l`/`w` shortcuts boot immediately; the host artwork follows the existing menu's controls and shows a static hero at the selected door.
 - Fancy uses a native module in a separate EFI image. Left/Right walks; Space enters only at a gate; L/W boots immediately.
-- Both editions use rear-facing gate poses that look up at the nameplates. Fancy adds twinkling stars and a short inward turn/step on Space, and keeps the hero in GRUB's boot handoff background.
+- Both editions use rear-facing gate poses that look up at the nameplates. Fancy adds twinkling stars, a periodic comet with a fading tail, and a short inward turn/step on Space, and keeps the hero in GRUB's boot handoff background.
 - Doorway feedback uses a soft amber light behind the selected hero. Slim keeps it static; Fancy fades it in on arrival, brightens it on Space, and retains it with the boot handoff hero.
 - Keep Linux and Windows as the two OS choices. Default to Linux after 30 seconds, cancel the timer on input, and keep Esc as the route to the technical menu.
 - Keep the shared stone nameplates in the background artwork and preserve each edition's title, controls, and visual layout. See `assets/README.adoc` for asset sources.
@@ -53,6 +53,7 @@ See the README for setup and verified commands.
 - `make host-fancy-check` checks that image in disposable Secure Boot QEMU firmware.
 - `make host-fancy-benchmark` measures VM rendering and checks shortcuts, gate activation, and the full countdown.
 - `make host-fancy-demo` records left/right/left movement and Linux fixture selection as a GIF and extracts a still.
+- `make host-fancy-comet` checks the staged comet's motion, fade, and cleanup in Secure Boot QEMU and records a GIF and still.
 - `make host-fancy-install` compiles and installs the current Fancy code as the persistent default, replacing an existing build and requesting hash enrollment when needed.
 - `make host-fancy-uninstall` removes the permanent installation and restores Ubuntu/Slim as the default.
 - `make host-fancy-trial-install` installs a staged one-time trial without selecting it.

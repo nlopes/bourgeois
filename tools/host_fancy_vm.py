@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw, ImageStat
 
 import lab
 from host_fancy_trial import verify_files
@@ -22,6 +22,9 @@ from grub_config import blocks, entry_id
 CODE = Path('/usr/share/OVMF/OVMF_CODE_4M.secboot.fd')
 VARS = Path('/usr/share/OVMF/OVMF_VARS_4M.ms.fd')
 OWNER = '605dab50-e046-4300-abb6-3dd810dd8b23'
+# Full comet sprite sweep in the 1672x941 reference courtyard. Keep the title
+# and timer outside this region, so pose comparisons still catch UI changes.
+COMET_REGION = (354, 127, 1150, 205)
 
 
 def run(*args, **kwargs):
@@ -210,7 +213,7 @@ def check_gate(monitor, directory, direction, name, repeat=True):
 
 
 def stable_pixels(image):
-    """Ignore the nine twinkling stars when comparing settled gate poses."""
+    """Ignore sky animations when comparing settled gate poses."""
     result = image.copy()
     width, height = result.size
     scale = max(1, min(6, height // 720, width // 800))
@@ -219,7 +222,78 @@ def stable_pixels(image):
                    (950, 85), (1060, 45), (1184, 76), (1320, 34)):
         x, y = px * width // 1672, py * height // 941
         draw.rectangle((x - scale, y - scale, x + 2 * scale - 1, y + 2 * scale - 1), fill=0)
+    left, top, right, bottom = comet_region(result.size)
+    draw.rectangle((left, top, right - 1, bottom - 1), fill=0)
     return result.tobytes()
+
+
+def comet_region(size):
+    width, height = size
+    left, top, right, bottom = COMET_REGION
+    return (left * width // 1672, top * height // 941,
+            (right * width + 1671) // 1672, (bottom * height + 940) // 941)
+
+
+def record_comet(monitor, directory):
+    """Check a real comet pass, including motion and complete tail cleanup."""
+    debug = directory / 'debug.log'
+    offset = debug.stat().st_size
+    lab.type_keys(monitor, 'configfile $prefix/fancy-demo.cfg\n')
+    deadline = time.monotonic() + 15
+    while 'BOURGEOIS_SCENE_READY' not in debug.read_text()[offset:]:
+        if time.monotonic() >= deadline:
+            raise RuntimeError('Comet recording scene did not start')
+        time.sleep(0.05)
+    monitor.command('send-key', {'keys': [{'type': 'qcode', 'data': 'spc'}]})
+    time.sleep(0.5)
+    capture = directory / 'comet-frame.ppm'
+    monitor.command('screendump', {'filename': str(capture)})
+    with Image.open(capture) as image:
+        region = comet_region(image.size)
+        baseline = image.convert('RGB').crop(region)
+    frames, times, visible = [], [], []
+    started = time.monotonic()
+    while time.monotonic() - started < 9.5:
+        tick = time.monotonic()
+        monitor.command('screendump', {'filename': str(capture)})
+        with Image.open(capture) as image:
+            shot = image.convert('RGB')
+        difference = ImageChops.difference(baseline, shot.crop(region))
+        changed = difference.getbbox()
+        elapsed = time.monotonic() - started
+        if changed:
+            visible.append((elapsed, changed, sum(ImageStat.Stat(difference).sum)))
+            if 5 <= elapsed <= 5.2:
+                shot.save(directory / 'fancy-comet.png')
+        frames.append(shot.resize((960, 540), Image.Resampling.NEAREST))
+        times.append(elapsed)
+        time.sleep(max(0, 1 / 12 - (time.monotonic() - tick)))
+    times.append(time.monotonic() - started)
+    if not visible or not 2.5 < visible[0][0] < 4.5 or not 6.5 < visible[-1][0] < 8.8:
+        raise RuntimeError('Comet did not appear and fade within its expected flight window')
+    first, last = visible[0][1], visible[-1][1]
+    if first[0] >= last[0] or first[1] >= last[1]:
+        raise RuntimeError('Comet did not travel right and downward')
+    peak = max(sample[2] for sample in visible)
+    if max(visible[0][2], visible[-1][2]) > peak / 2:
+        raise RuntimeError('Comet did not fade progressively at both ends of its flight')
+    if ImageChops.difference(baseline, shot.crop(region)).getbbox():
+        raise RuntimeError('The comet left a trail after fading out')
+    if not (directory / 'fancy-comet.png').exists():
+        raise RuntimeError('Comet recording did not capture its visible still')
+    palette = frames[0].quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+    encoded = [frame.quantize(palette=palette, dither=Image.Dither.NONE) for frame in frames]
+    durations = [max(10, round((end - start) * 100) * 10)
+                 for start, end in zip(times, times[1:])]
+    encoded[0].save(directory / 'fancy-comet.gif', save_all=True,
+                    append_images=encoded[1:], duration=durations,
+                    loop=0, disposal=1, optimize=False)
+    (directory / 'comet-checks.json').write_text(json.dumps({
+        'motion_right_and_down': True, 'fades_in_and_out': True,
+        'no_tail_after_flight': True, 'timer_cancelled': True,
+        'first_visible_ms': round(visible[0][0] * 1000),
+        'last_visible_ms': round(visible[-1][0] * 1000)}, indent=2) + '\n')
+    print('comet: motion, fade, and tail cleanup PASS', flush=True)
 
 
 def benchmark_scene(monitor, directory, stage):
@@ -386,7 +460,7 @@ def check_controls(monitor, directory, original_timing=False):
 
 
 def check_case(base, stage, manifest, mode, benchmark=False, original_renderer=False,
-               original_timing=False, demo=False):
+               original_timing=False, demo=False, comet=False):
     directory = base / mode
     directory.mkdir(exist_ok=True)
     esp = prepare_esp(directory, stage, mode)
@@ -412,7 +486,7 @@ def check_case(base, stage, manifest, mode, benchmark=False, original_renderer=F
             '-drive', f'file={base}/root.btrfs,format=raw,if=virtio,snapshot=on',
             '-net', 'none', '-display', 'none', '-serial', f'file:{directory}/serial.log',
             '-qmp', f'unix:{socket},server=on,wait=off']
-    if benchmark or original_renderer or original_timing or demo:
+    if benchmark or original_renderer or original_timing or demo or comet:
         args += ['-debugcon', f'file:{directory}/debug.log', '-global', 'isa-debugcon.iobase=0xe9']
     with (directory / 'qemu.log').open('w') as log:
         process = subprocess.Popen([str(a) for a in args], stdout=log, stderr=log)
@@ -478,6 +552,10 @@ def check_case(base, stage, manifest, mode, benchmark=False, original_renderer=F
                     monitor.command('send-key', {'keys': [{'type': 'qcode', 'data': 'c'}]})
                     time.sleep(1)
                     record_demo(monitor, directory, manifest)
+                elif comet:
+                    monitor.command('send-key', {'keys': [{'type': 'qcode', 'data': 'c'}]})
+                    time.sleep(1)
+                    record_comet(monitor, directory)
             else:
                 screen(monitor, directory, 'screen')
                 if ('BOURGEOIS_HOST_SHIM_LOCK_OK' in serial
@@ -510,13 +588,17 @@ def main():
                         help='use original timing counters while checking repeated-arrow facing')
     parser.add_argument('--record-demo', action='store_true',
                         help='record left/right/left walking and Linux fixture selection as a GIF and still')
+    parser.add_argument('--record-comet', action='store_true',
+                        help='check comet motion, fading, and cleanup; record a GIF and still')
     args = parser.parse_args()
     if (args.original_renderer or args.original_timing) and args.benchmark:
         parser.error('Original timing modes cannot use the newer --benchmark profiling format')
     if args.original_renderer and args.original_timing:
         parser.error('Select --original-timing to require repeated-arrow facing checks')
-    if args.record_demo and (args.benchmark or args.original_renderer or args.original_timing):
-        parser.error('--record-demo uses its own input sequence; select one recording/check mode')
+    if (args.record_demo or args.record_comet) and (
+            args.benchmark or args.original_renderer or args.original_timing
+            or (args.record_demo and args.record_comet)):
+        parser.error('Recordings use their own input sequence; select one recording/check mode')
     try:
         for name in ('qemu-system-x86_64', 'mkfs.btrfs', 'mkfs.fat', 'mcopy', 'sgdisk', 'mokutil'):
             if shutil.which(name) is None:
@@ -532,10 +614,11 @@ def main():
         (base / 'sbat-level.csv').write_text(subprocess.check_output(
             ['mokutil', '--list-sbat-revocations'], text=True))
         prepare_root(base, manifest, stage)
-        for mode in (('trusted',) if args.record_demo else ('trusted', 'untrusted', 'tampered')):
+        for mode in (('trusted',) if args.record_demo or args.record_comet
+                     else ('trusted', 'untrusted', 'tampered')):
             check_case(base, stage, manifest, mode, args.benchmark and mode == 'trusted',
                        args.original_renderer and mode == 'trusted',
-                       args.original_timing and mode == 'trusted', args.record_demo)
+                       args.original_timing and mode == 'trusted', args.record_demo, args.record_comet)
         print('Inspect trusted/screen.png and trusted/technical.png before a host trial.')
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
         sys.exit(f'bourgeois: {error}')

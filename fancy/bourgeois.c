@@ -103,6 +103,34 @@ bitmap_pixels (struct grub_video_bitmap *bitmap)
   return pixels;
 }
 
+static grub_err_t
+draw_comet (unsigned long long elapsed, struct grub_video_bitmap *image)
+{
+  struct scene_comet frame = scene_comet_frame (elapsed);
+  unsigned row, col;
+  if (!frame.opacity)
+    return GRUB_ERR_NONE;
+  for (row = 0; row < image->mode_info.height; row++)
+    for (col = 0; col < image->mode_info.width; col++)
+      {
+        struct scene_comet_color color = scene_comet_pixel (
+          col * SCENE_COMET_WIDTH / image->mode_info.width,
+          row * SCENE_COMET_HEIGHT / image->mode_info.height, frame.opacity);
+        unsigned char *pixel = (unsigned char *) image->data
+          + row * image->mode_info.pitch + col * 4;
+        pixel[0] = color.red;
+        pixel[1] = color.green;
+        pixel[2] = color.blue;
+        pixel[3] = color.alpha;
+      }
+  return grub_video_blit_bitmap (image, GRUB_VIDEO_BLIT_BLEND,
+                                 frame.x * width / 1672
+                                   - SCENE_COMET_HEAD_X * image->mode_info.width / SCENE_COMET_WIDTH,
+                                 frame.y * height / 941
+                                   - SCENE_COMET_HEAD_Y * image->mode_info.height / SCENE_COMET_HEIGHT,
+                                 0, 0, image->mode_info.width, image->mode_info.height);
+}
+
 static int
 glass_half_width (int row)
 {
@@ -334,6 +362,7 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
 {
   struct grub_video_bitmap *background = 0, *actor = 0, *left_actor = 0;
   struct grub_video_bitmap *gate_actor = 0, *doorway = 0;
+  struct grub_video_bitmap *comet = 0;
   struct scene_state state = { 0 };
   enum scene_action action = SCENE_WAIT;
   grub_err_t err = GRUB_ERR_NONE, recovery_err;
@@ -405,6 +434,11 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
   light_top = (height * 580 + 470) / 941;
   if ((err = load_scaled (&doorway, args[5], light_width * 8, light_height)))
     goto done;
+  err = grub_video_bitmap_create (&comet, (width * SCENE_COMET_WIDTH + 836) / 1672,
+                                  (height * SCENE_COMET_HEIGHT + 470) / 941,
+                                  GRUB_VIDEO_BLIT_FORMAT_RGBA_8888);
+  if (err)
+    goto done;
   scene_init (&state, grub_get_time_ms ());
   trace ("BOURGEOIS_SCENE_READY");
   while (action == SCENE_WAIT)
@@ -422,6 +456,9 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       if (err)
         goto done;
       stars (now);
+      err = draw_comet (now - state.started, comet);
+      if (err)
+        goto done;
       {
         int light_frame = scene_doorway_frame (&state, now);
         if (light_frame >= 0)
@@ -483,7 +520,8 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
                      width, height, frames, render_total / frames, render_max,
                      background->mode_info.pitch * height + actor->mode_info.pitch * frame_height * 2
                      + gate_actor->mode_info.pitch * frame_height
-                     + doorway->mode_info.pitch * light_height);
+                     + doorway->mode_info.pitch * light_height
+                     + comet->mode_info.pitch * comet->mode_info.height);
       trace (stats);
     }
   if (!err && (action == SCENE_BOOT_LINUX || action == SCENE_BOOT_WINDOWS))
@@ -503,6 +541,7 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
                          height * 73 / 100 - frame_height - step, gate_width, frame_height))
         err = grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: unsupported sprite pixel format");
     }
+  grub_video_bitmap_destroy (comet);
   grub_video_bitmap_destroy (gate_actor);
   grub_video_bitmap_destroy (doorway);
   grub_video_bitmap_destroy (left_actor);

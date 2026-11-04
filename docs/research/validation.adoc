@@ -262,6 +262,25 @@ Private builds, firmware variables, logs, and captures remain under ignored `bui
 These checks use file-backed virtual disks, routing fixtures, and simulated firmware commands for the installer.
 They do not install the permanent image on the physical host, perform real Windows chainloading, or confirm a new image hash in the physical MokManager.
 
+== Comet in the night sky
+
+Issue https://github.com/nlopes/bourgeois/issues/1[#1] adds a small comet with a fading blue tail and warm white head to Fancy.
+It starts four seconds after the scene opens, flies for 4.5 seconds, and repeats every 18 seconds.
+It continues when input pauses automatic boot.
+The sprite uses one small RGBA bitmap and the existing scene redraw to clear its previous position.
+
+Host C tests cover the flight window, direction, repeated passes, fade envelope, tail taper, display bounds, continued animation after input, allocation failure, and drawing failure recovery.
+The C tests pass with GCC and Clang, Clang static analysis, AddressSanitizer, and UndefinedBehaviorSanitizer.
+`make test` passes all 114 Python tests alongside the C tests.
+A fresh native image was compiled against the matching Ubuntu GRUB 2.14 headers and checked by the module verifier.
+`make host-fancy-comet` recorded actual Secure Boot QEMU frames and checked motion, the visible flight window, fading brightness at both ends, and complete tail cleanup.
+The full Secure Boot benchmark passed gate facing, walking cleanup, Esc recovery, timer cancellation, gate activation, immediate L/W routing, and the untouched Linux countdown.
+Shim accepted the enrolled image and rejected untrusted and altered copies.
+The published GIF and still contain the courtyard scene without host identifiers or personal metadata.
+This change has not been tested on physical firmware.
+
+image::mockups/fancy-comet.png[The comet and its fading tail in actual GRUB,960]
+
 == Validation limits
 
 An additional stock GRUB 2.14 UEFI rendering check on the Linux host reproduced the centered black handoff rectangle.

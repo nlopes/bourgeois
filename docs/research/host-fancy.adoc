@@ -190,6 +190,21 @@ Set `HOST_FANCY_DEMO` to a fresh directory for another recording.
 
 image::mockups/fancy-demo.png[Confirmed Fancy controller baseline recorded in Secure Boot QEMU,960]
 
+With a fresh staged image, check and record the comet:
+
+[source,shell]
+----
+make host-fancy-comet
+----
+
+This uses the same Secure Boot VM prerequisites and checks that the comet moves right and downward, fades away, and leaves the sky clean afterward.
+The timer is paused during capture.
+The recording is `build/fancy-comet/trusted/fancy-comet.gif`; the matching still is `fancy-comet.png` in that directory.
+Set `HOST_FANCY_COMET` to a fresh directory to preserve an earlier recording.
+Private metadata remains under `build/`; publish only reviewed captures.
+
+image::mockups/fancy-comet.gif[Comet crossing Fancy's upper sky in actual Secure Boot GRUB,960]
+
 == Optional one-time trial
 
 These commands modify the host and require interactive sudo authentication.

@@ -9,12 +9,13 @@ enum failure
 {
   MODE, VIEWPORT, INFO, RESTORE, CONSOLE, GFXTERM, WINDOW, BACKGROUND,
   SPRITES, SCALE, MIRROR, AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP,
-  POSES, HANDOFF_SCALE, DOORWAY, LIGHT_DRAW
+  POSES, HANDOFF_SCALE, DOORWAY, LIGHT_DRAW, COMET_CREATE, COMET_DRAW
 };
 enum terminal { CONSOLE_ACTIVE, GFXTERM_ACTIVE };
 static unsigned failures;
 static unsigned recovery_calls, window_calls, live_bitmaps, load_calls, create_calls;
 static unsigned draw_calls, key_calls, scale_calls, gate_frames, doorway_frames;
+static unsigned comet_draw_calls;
 static unsigned terminal_width, terminal_height;
 static enum terminal output;
 static int functional, video_active, no_menu, clock_step;
@@ -49,6 +50,7 @@ reset (void)
   assert (live_bitmaps == 0);
   failures = recovery_calls = window_calls = load_calls = create_calls = draw_calls = key_calls = 0;
   scale_calls = gate_frames = doorway_frames = 0;
+  comet_draw_calls = 0;
   terminal_width = 800;
   terminal_height = 600;
   functional = video_active = 1;
@@ -192,7 +194,7 @@ failures_before_boot (void)
 {
   enum failure operations[] = { VIEWPORT, BACKGROUND, SPRITES, SCALE, MIRROR,
                                 AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP, POSES,
-                                DOORWAY };
+                                DOORWAY, COMET_CREATE };
   unsigned i;
   for (i = 0; i < sizeof operations / sizeof operations[0]; i++)
     {
@@ -261,6 +263,30 @@ render_and_escape (void)
   test_module_fini ();
 }
 
+static void
+comet_and_recovery (void)
+{
+  unsigned i;
+  reset ();
+  clock_step = 600;
+  for (i = 0; i < 64; i++)
+    inputs[i] = GRUB_TERM_NO_KEY;
+  inputs[0] = ' '; /* Pausing automatic boot must not pause the sky. */
+  inputs[8] = GRUB_TERM_ESC;
+  assert (run () == GRUB_ERR_NONE);
+  assert (comet_draw_calls > 0 && functional);
+  assert (strcmp (default_value, "previous") == 0);
+  reset ();
+  clock_step = 600;
+  for (i = 0; i < 64; i++)
+    inputs[i] = GRUB_TERM_NO_KEY;
+  failures = 1U << COMET_DRAW;
+  assert (run () != GRUB_ERR_NONE);
+  assert (comet_draw_calls > 0 && live_bitmaps == 0 && functional);
+  assert (strcmp (default_value, "previous") == 0);
+  assert (strcmp (timeout_value, "0") != 0);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -268,7 +294,8 @@ main (int argc, char **argv)
     { "selection", selection }, { "recovery", recovery },
     { "mode", mode_failure }, { "fallback", fallback }, { "font", missing_font },
     { "entries", invalid_entries }, { "failures", failures_before_boot },
-    { "render", render_and_escape }, { "enter", enter_and_handoff }
+    { "render", render_and_escape }, { "enter", enter_and_handoff },
+    { "comet", comet_and_recovery }
   };
   unsigned i;
   for (i = 0; i < sizeof cases / sizeof cases[0]; i++)
@@ -420,6 +447,13 @@ grub_video_blit_bitmap (struct grub_video_bitmap *bitmap, int operation,
       doorway_frames |= 1U << ((unsigned) sx / w);
       if (fail (LIGHT_DRAW)) return GRUB_ERR_TEST_FAILURE;
     }
+  if (bitmap->mode_info.width == (800 * SCENE_COMET_WIDTH + 836) / 1672
+      && bitmap->mode_info.height == (600 * SCENE_COMET_HEIGHT + 470) / 941)
+    {
+      comet_draw_calls++;
+      assert (x >= 0 && y >= 0 && (unsigned) x + w < 800 && (unsigned) y + h < 600);
+      if (fail (COMET_DRAW)) return GRUB_ERR_TEST_FAILURE;
+    }
   draw_calls++;
   return fail (DRAW) ? GRUB_ERR_TEST_FAILURE : GRUB_ERR_NONE;
 }
@@ -430,6 +464,7 @@ grub_video_bitmap_create (struct grub_video_bitmap **bitmap, unsigned w, unsigne
 {
   create_calls++;
   if (create_calls == 5 && fail (MIRROR)) return GRUB_ERR_TEST_FAILURE;
+  if (create_calls == 10 && fail (COMET_CREATE)) return GRUB_ERR_TEST_FAILURE;
   *bitmap = calloc (1, sizeof **bitmap);
   assert (*bitmap);
   (*bitmap)->mode_info = (struct grub_video_mode_info) {

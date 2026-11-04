@@ -34,6 +34,8 @@ The tools register a separate `bourgeois preview` EFI entry inside the lab VM.
 `reset` performs a cold VM restart with the selected guest boot order.
 Fancy inherits the distribution's `gfxmode`; `bourgeois_gfxmode` remains its explicit GRUB override.
 Text and the freestanding hourglass scale with the actual mode, while walking, gate prompts, and the animated sand retain their behavior.
+A small comet appears four seconds into the scene, crosses the upper sky for 4.5 seconds, and repeats every 18 seconds.
+Its blue tail and warm white head fade in and out, including while automatic boot is paused.
 On return, Fancy restores a full-screen terminal and the courtyard background for boot messages.
 The GPU advisor under <<host-gpus>> applies to either edition and only prints setup guidance.
 

@@ -194,6 +194,23 @@ Set `HOST_FANCY_DEMO` to a fresh directory for another recording.
 == Checks and packages
 
 `make test` runs the Python and C checks without a VM.
+GitHub Actions runs these checks with GCC and Clang on Ubuntu 24.04 for pushes, pull requests, and manual runs.
+The compiler jobs install and check Pillow, `grub-mkfont`, and DejaVu Sans Mono so the artwork tests run.
+A separate job runs Clang static analysis, AddressSanitizer with leak detection, and UndefinedBehaviorSanitizer.
+The workflow uses the system Python with Ubuntu's Pillow package.
+
+To install the same test prerequisites on Ubuntu 24.04:
+
+[source,shell]
+----
+sudo apt-get update
+sudo apt-get install --yes --no-install-recommends \
+  build-essential clang libclang-rt-dev fonts-dejavu-mono grub2-common python3-pil
+/usr/bin/python3 tools/host_checks.py stage
+make test CC=gcc PYTHON=/usr/bin/python3
+make test CC=clang PYTHON=/usr/bin/python3
+----
+
 `make test-c` runs only the C controller, layout, pixel blending, and command tests.
 The command tests compile the module with GRUB service doubles and inject failures at the menu, graphics, authentication, and asset boundaries.
 The native build compiles against the real GRUB headers and verifies the generated module separately.

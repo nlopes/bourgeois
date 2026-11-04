@@ -12,6 +12,7 @@ Development targets Ubuntu 24.04 x86_64 UEFI in a disposable QEMU guest.
 - `tools/` contains Python build and VM tooling, with tests beside the code.
 - `assets/` contains shared PNG artwork and generation prompts.
 - `fancy/` contains the GPLv3+ native GRUB module, host C tests and GRUB service doubles, isolated trial patches, and its license.
+- `.github/workflows/` contains the GitHub Actions checks for Python, C compilers, static analysis, and sanitizers.
 - `build/` contains ignored guest disks, keys, caches, and evidence.
 
 Add implementation directories when needed, and document their purpose here.
@@ -83,6 +84,7 @@ For documentation changes, check spelling, markup, referenced paths, and command
 
 When adding behavior, include appropriate tests and a reproducible test command. Name tests after the behavior they verify, and add regression coverage for bug fixes.
 Run only one boot-test process against the VM at a time.
+GitHub Actions runs `make test` with GCC and Clang on Ubuntu 24.04, including the font-dependent artwork tests, plus Clang static analysis and sanitizers.
 For rendering or input changes, inspect actual GRUB captures as well as the automated results; see `docs/research/preview.adoc`.
 
 ## Commit and pull request guidelines

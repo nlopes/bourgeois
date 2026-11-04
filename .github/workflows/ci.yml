@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON: /usr/bin/python3
+
+jobs:
+  tests:
+    name: Python and C (${{ matrix.compiler }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install test prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential clang fonts-dejavu-mono grub2-common python3-pil
+      - name: Check artwork prerequisites
+        run: '"$PYTHON" tools/host_checks.py stage'
+      - name: Run Python and C tests
+        run: make test CC=/usr/bin/${{ matrix.compiler }}
+
+  c-analysis:
+    name: C analysis and sanitizers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install analysis prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential clang libclang-rt-dev python3
+      - name: Run Clang static analysis
+        run: make analyze-c CLANG=/usr/bin/clang
+      - name: Run AddressSanitizer and UndefinedBehaviorSanitizer
+        run: make sanitize-c CC=/usr/bin/clang
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1

@@ -11,19 +11,12 @@ import shutil
 import subprocess
 import sys
 
-from grub_config import blocks, entry_id, hook
+from host_fancy_config import CLEAN_HOOK, MEM, configuration, native_menus
 from host_checks import FONT, require_tools
 import doorway
 
 ROOT = Path(__file__).resolve().parent.parent
 VERSION = '2.14-2ubuntu1'
-MEM = '(memdisk)/boot/grub/bourgeois'
-CLEAN_HOOK = '''### BEGIN /etc/grub.d/99_clean_menu ###
-if [ -f $prefix/clean-menu.cfg ]; then
-  configfile $prefix/clean-menu.cfg
-fi
-set theme=$prefix/themes/clean/recovery.txt
-### END /etc/grub.d/99_clean_menu ###'''
 # Ubuntu's debian/build-efi-images GRUB_MODULES, plus Fancy dependencies.
 MODULES = '''boot btrfs cat chain configfile echo efi_gop efifwsetup efinet ext2
 fat font gettext gfxmenu gfxterm gfxterm_background gzio halt help hfsplus
@@ -47,52 +40,12 @@ def digest(file):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def native_menus(source):
-    return [(b.header, source[b.opening:b.end]) for b in blocks(source)
-            if b.kind in ('menuentry', 'submenu')]
-
-
-def configuration(source, clean):
-    """Replace only the known scene hook and font paths; keep native menus."""
-    entries = [b for b in blocks(clean) if b.kind == 'menuentry']
-    if (len(entries) != 2 or '--class gnu-linux' not in entries[0].header
-            or '--class windows' not in entries[1].header):
-        raise ValueError('Expected the existing Linux-first, two-entry clean menu')
-    original = [b for b in blocks(source) if b.kind == 'menuentry']
-    for chosen in entries:
-        matches = [b for b in original if entry_id(b) == entry_id(chosen)]
-        if (entry_id(chosen) is None or len(matches) != 1
-                or source[matches[0].opening:matches[0].end] != clean[chosen.opening:chosen.end]):
-            raise ValueError('Clean-menu boot commands differ from the full menu')
-    if source.count(CLEAN_HOOK) != 1:
-        raise ValueError('Unrecognized clean-menu hook; inspect before adapting it')
-    scene = hook('fancy', *(entry_id(b) for b in entries))
-    scene = scene.replace('$prefix/bourgeois', MEM).replace('set bourgeois_trace=1',
-                                                          'set bourgeois_trace=0')
-    scene = scene.replace('insmod all_video', 'insmod efi_gop')
-    output = source.replace(CLEAN_HOOK, scene)
-    # GRUB 2.14 prohibits unverified disk fonts under Secure Boot. The memdisk
-    # is inside the EFI executable verified by shim, so its fonts are trusted.
-    for old, new in [('loadfont $font', f'loadfont {MEM}/unicode.pf2'),
-                     ('loadfont ($root)/boot/grub/themes/bourgeois/menu.pf2',
-                      f'loadfont {MEM}/menu-40.pf2')]:
-        if output.count(old) != 1:
-            raise ValueError(f'Unrecognized host font initialization: {old}')
-        output = output.replace(old, new)
-    output = output.replace('loadfont unicode', f'loadfont {MEM}/unicode.pf2')
-    if native_menus(output) != native_menus(source):
-        raise ValueError('Refusing to change native menu definitions')
-    uuids = re.findall(r'root=UUID=([0-9a-f-]+)', clean)
-    if not uuids or len(set(uuids)) != 1:
-        raise ValueError('Expected one native Linux root UUID')
-    # This first host trial supports /boot on the Linux root, not a separate
-    # /boot partition or an uninspected Btrfs subvolume layout.
-    if not re.search(r'\blinux\s+/boot/vmlinuz-', clean):
-        raise ValueError('This trial requires the inspected /boot-on-root layout')
-    return output, uuids[0]
-
-
-def bootstrap(uuid):
+def bootstrap(uuid, persistent=False):
+    menu = '''if [ -f $prefix/bourgeois-fancy.cfg ]; then
+    configfile $prefix/bourgeois-fancy.cfg
+  else
+    configfile $prefix/grub.cfg
+  fi''' if persistent else 'configfile (memdisk)/boot/grub/host.cfg'
     return f'''serial --unit=0 --speed=115200
 terminal_output console serial
 if [ "${{shim_lock}}" != "y" ]; then
@@ -103,7 +56,7 @@ fi
 echo BOURGEOIS_HOST_SHIM_LOCK_OK
 if search --no-floppy --fs-uuid --set=root {uuid}; then
   set prefix=($root)/boot/grub
-  configfile (memdisk)/boot/grub/host.cfg
+  {menu}
 else
   echo 'Host boot filesystem missing. Returning to firmware.'
   sleep --interruptible 10
@@ -162,7 +115,7 @@ def authenticode(image, pesign):
     return match[1].lower()
 
 
-def stage(source, build, snapshot, output, pesign, module_source=None):
+def stage(source, build, snapshot, output, pesign, module_source=None, persistent=False):
     require_tools('stage')
     source, build, snapshot, output = [p.resolve() for p in (source, build, snapshot, output)]
     module_source = (module_source or ROOT / 'fancy/bourgeois.c').resolve()
@@ -186,7 +139,7 @@ def stage(source, build, snapshot, output, pesign, module_source=None):
     modules = compile_module(source, build, module_source)
     output.mkdir(parents=True, exist_ok=True)
     (output / 'host.cfg').write_text(config)
-    (output / 'bootstrap.cfg').write_text(bootstrap(uuid))
+    (output / 'bootstrap.cfg').write_text(bootstrap(uuid, persistent))
     assets = output / 'bourgeois'
     assets.mkdir()
     doorway.atlas(assets)
@@ -227,6 +180,8 @@ def stage(source, build, snapshot, output, pesign, module_source=None):
                 'snapshots': {name: digest(snapshot / name) for name in ('grub.cfg', 'clean-menu.cfg')},
                 'files': {name: digest(output / name) for name in
                           ('grubx64.efi', 'shimx64.efi', 'mmx64.efi')}}
+    if persistent:
+        manifest['mode'] = 'persistent'
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(f'Staged {image}\nMOK Authenticode SHA256: {auth}\nHost boot configuration unchanged.')
 
@@ -240,9 +195,12 @@ def main():
     parser.add_argument('--pesign', default='pesign')
     parser.add_argument('--module-source', type=Path,
                         help='use an isolated native renderer source for a regression trial')
+    parser.add_argument('--persistent', action='store_true',
+                        help='load the current host menu maintained by update-grub')
     args = parser.parse_args()
     try:
-        stage(args.source, args.build, args.snapshot, args.output, args.pesign, args.module_source)
+        stage(args.source, args.build, args.snapshot, args.output, args.pesign,
+              args.module_source, args.persistent)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         sys.exit(f'bourgeois: {error}')
 

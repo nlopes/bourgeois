@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 import lab
 from host_fancy_trial import verify_files
@@ -33,9 +33,11 @@ def disk_file(file, size):
         stream.truncate(size)
 
 
-def prepare_root(base, manifest):
+def prepare_root(base, manifest, stage=None):
     fake = base / 'root/boot/grub'
     fake.mkdir(parents=True, exist_ok=True)
+    if manifest.get('mode') == 'persistent':
+        shutil.copyfile(stage / 'host.cfg', fake / 'bourgeois-fancy.cfg')
     (fake / 'fancy-input.cfg').write_text('''# Disposable routing fixture; no host OS paths.
 serial --unit=0 --speed=115200
 set gfxmode=2560x1440,auto
@@ -193,7 +195,7 @@ def check_gate(monitor, directory, direction, name, repeat=True):
     for _ in range(10):
         time.sleep(1)
         image = screen(monitor, directory, name)
-        if image.tobytes() == previous.tobytes():
+        if stable_pixels(image) == stable_pixels(previous):
             break
         previous = image
     else:
@@ -202,9 +204,22 @@ def check_gate(monitor, directory, direction, name, repeat=True):
         monitor.command('send-key', arrow)
         time.sleep(1)
         repeated = screen(monitor, directory, name + '-repeat')
-        if repeated.tobytes() != image.tobytes():
+        if stable_pixels(repeated) != stable_pixels(image):
             raise RuntimeError(f'Repeating {direction} changed the standing pose at {name}')
     return image
+
+
+def stable_pixels(image):
+    """Ignore the nine twinkling stars when comparing settled gate poses."""
+    result = image.copy()
+    width, height = result.size
+    scale = max(1, min(6, height // 720, width // 800))
+    draw = ImageDraw.Draw(result)
+    for px, py in ((265, 45), (350, 60), (475, 20), (580, 90), (755, 36),
+                   (950, 85), (1060, 45), (1184, 76), (1320, 34)):
+        x, y = px * width // 1672, py * height // 941
+        draw.rectangle((x - scale, y - scale, x + 2 * scale - 1, y + 2 * scale - 1), fill=0)
+    return result.tobytes()
 
 
 def benchmark_scene(monitor, directory, stage):
@@ -437,12 +452,14 @@ def check_case(base, stage, manifest, mode, benchmark=False, original_renderer=F
                                      repeat=benchmark or original_timing)
                 w, h = image.size
                 actor_height = h // 7
-                actor_width = actor_height * 5 // 8
+                gate_width = actor_height * 3 // 4
+                light_width = (w * 320 + 836) // 1672
+                padding = max(gate_width, light_width) // 2 + 3
                 # The walking path between both standing poses must return
-                # to the identical courtyard, with no trails from old frames.
-                band = (w * 326 // 1672 + actor_width // 2 + 3,
+                # to the identical courtyard outside the selected gate light.
+                band = (w * 326 // 1672 + padding,
                         h * 73 // 100 - actor_height,
-                        w * 1358 // 1672 - actor_width // 2 - 3, h * 73 // 100)
+                        w * 1358 // 1672 - padding, h * 73 // 100)
                 if linux.crop(band).tobytes() != windows.crop(band).tobytes():
                     raise RuntimeError('Walking left trails in the courtyard')
                 monitor.command('send-key', {'keys': [{'type': 'qcode', 'data': 'esc'}]})
@@ -514,7 +531,7 @@ def main():
         base.mkdir(parents=True)
         (base / 'sbat-level.csv').write_text(subprocess.check_output(
             ['mokutil', '--list-sbat-revocations'], text=True))
-        prepare_root(base, manifest)
+        prepare_root(base, manifest, stage)
         for mode in (('trusted',) if args.record_demo else ('trusted', 'untrusted', 'tampered')):
             check_case(base, stage, manifest, mode, args.benchmark and mode == 'trusted',
                        args.original_renderer and mode == 'trusted',

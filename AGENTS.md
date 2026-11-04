@@ -28,7 +28,7 @@ Keep the README focused on the project and its setup.
 - Keep Linux and Windows as the two OS choices. Default to Linux after 30 seconds, cancel the timer on input, and keep Esc as the route to the technical menu.
 - Keep the shared stone nameplates in the background artwork and preserve each edition's title, controls, and visual layout. See `assets/README.adoc` for asset sources.
 - Keep host snapshots, firmware identifiers, trust hashes, hardware inventories, and private logs in ignored `build/` storage. Use synthetic identifiers in committed fixtures and publish only captures without host details or personal metadata.
-- Install general development previews only in the disposable lab guest. Use the backed-up host installer for the existing Slim host theme. The explicitly requested Fancy host trial uses the separate, hash-enrolled EFI and one-time BootNext workflow in `docs/research/host-fancy.adoc`; preserve Ubuntu/Slim as the default. Windows lab tests use a routing fixture; see `docs/research/validation.adoc` for validation limits.
+- Install general development previews only in the disposable lab guest. Use the backed-up host installer for the existing Slim host theme. The requested permanent Fancy installation compiles a separate, hash-enrolled EFI image, selects it through persistent BootOrder, and preserves Ubuntu/Slim for recovery. Its menu follows distribution updates through the final `update-grub` generator. Keep optional one-time trials separate; see `docs/research/host-fancy.adoc`. Windows lab tests use a routing fixture; see `docs/research/validation.adoc` for validation limits.
 
 ## Build, test, and development commands
 
@@ -53,7 +53,9 @@ See the README for setup and verified commands.
 - `make host-fancy-check` checks that image in disposable Secure Boot QEMU firmware.
 - `make host-fancy-benchmark` measures VM rendering and checks shortcuts, gate activation, and the full countdown.
 - `make host-fancy-demo` records left/right/left movement and Linux fixture selection as a GIF and extracts a still.
-- `make host-fancy-install` installs a separate EFI entry without selecting it.
+- `make host-fancy-install` compiles and installs the current Fancy code as the persistent default, replacing an existing build and requesting hash enrollment when needed.
+- `make host-fancy-uninstall` removes the permanent installation and restores Ubuntu/Slim as the default.
+- `make host-fancy-trial-install` installs a staged one-time trial without selecting it.
 - `make host-fancy-enroll` requests image hash enrollment through MokManager.
 - `make host-fancy-once` arms an enrolled image for one boot only.
 - `make host-fancy-remove` removes the separate trial entry and files.

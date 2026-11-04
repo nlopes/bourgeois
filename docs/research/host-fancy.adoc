@@ -1,4 +1,4 @@
-= Fancy: one-time Secure Boot host trial
+= Fancy: host installation and Secure Boot trials
 
 == Supported scope
 
@@ -8,11 +8,54 @@ The Ubuntu 24.04 disposable lab remains separate.
 The current builder and VM checks use `2560x1440,auto`; establish a working firmware mode before adapting another system.
 The builder deliberately rejects unrecognized menu hooks, boot layouts, or module versions.
 
+== Install or reinstall permanently
+
+With the prerequisites and matching Ubuntu source described below, run this from the repository root:
+
+[source,shell]
+----
+make host-fancy-install
+----
+
+The command authenticates with sudo, takes fresh private menu snapshots, and compiles the current Fancy source and artwork as your regular user.
+Each build uses a new private `build/fancy-install-*/` directory.
+It reuses the matching source under `build/host-fancy-source/` and any tools already extracted under `build/host-fancy-tools/root/`.
+Installation then backs up the existing files and firmware selection under `/var/backups/bourgeois/fancy/`.
+It installs the separate EFI image and puts Fancy first and Ubuntu second in persistent BootOrder.
+Run the same command to update an installed build or migrate an existing one-time trial.
+It reuses the existing boot entry without requiring removal first.
+It does not reboot the machine.
+
+When the image hash is not enrolled, the command requests enrollment and asks for a temporary MokManager password.
+On the next reboot, choose `Enroll MOK`, check the displayed image hash, and confirm it with that password.
+This confirmation is required for each new image hash; the installer cannot bypass Secure Boot's firmware confirmation.
+An already-enrolled hash needs no further enrollment.
+There is no separate `host-fancy-once` step: Fancy remains the default on subsequent boots.
+
+The permanent image loads `/boot/grub/bourgeois-fancy.cfg`.
+The final `/etc/grub.d/zzzz_bourgeois_fancy` generator rebuilds that file during each `update-grub`, preserving the current distribution entries, commands, authentication, and recovery helpers.
+Fonts and artwork remain inside the verified EFI image.
+If the generator cannot recognize or validate a new menu, it removes the stale Fancy menu and the image falls back to the distribution configuration.
+Kernel updates therefore do not require recompilation or image re-enrollment.
+Changes to Fancy itself require another `make host-fancy-install`.
+
+To remove the permanent installation and restore Ubuntu/Slim as the default:
+
+[source,shell]
+----
+make host-fancy-uninstall
+----
+
+Removal preserves the backups and image hash enrollment.
+Ubuntu's original EFI entry and files remain available for recovery through the firmware boot menu throughout installation.
+
 == Trust and recovery
 
 Fancy uses its own `/EFI/bourgeois-fancy/` directory and a separate firmware entry.
-Ubuntu's EFI files, Slim artwork, generated menus, and persistent boot ordering are preserved.
-Installation uses `efibootmgr --create-only`; `make host-fancy-once` selects the verified image through BootNext for one boot.
+Both workflows preserve Ubuntu's EFI files and Slim artwork.
+Permanent installation regenerates the menus and changes persistent BootOrder as described above.
+The optional trial workflow preserves the existing menus and Ubuntu-first ordering.
+Trial installation uses `efibootmgr --create-only`; `make host-fancy-once` selects the verified image through BootNext for one boot.
 The selector checks the installed files, enrolled image hash, current menus, and unchanged default ordering before changing BootNext.
 Firmware consumes this one-time selection before starting the entry.
 Subsequent ordinary boots use Ubuntu/Slim.
@@ -28,7 +71,8 @@ Use the hashes printed by the local tooling and recorded in its private manifest
 Native entry headers, commands, IDs, authentication, environment loading, and recovery helpers are preserved.
 Only the recognized scene hook and presentation font references are adapted.
 Fonts and assets are embedded inside the verified image because external font loading can be restricted under Secure Boot.
-The embedded menu is a snapshot: kernel or menu changes require rebuilding and validating the image before another trial.
+The one-time trial's embedded menu is a snapshot: kernel or menu changes require rebuilding and validating that image before another trial.
+Permanent installation uses the regenerated menu instead.
 
 References: https://wiki.ubuntu.com/UEFI/SecureBoot[Ubuntu Secure Boot], https://github.com/lcp/mokutil/blob/master/man/mokutil.1[mokutil hash enrollment], https://github.com/rhboot/shim/blob/15.8/verify.c[shim verification], and https://github.com/rhboot/efibootmgr/blob/main/README.md[efibootmgr].
 
@@ -40,10 +84,12 @@ They are deliberately omitted from published documentation and recordings.
 
 The build needs Python 3.11+, Pillow, GCC, Make, binutils, Bison, Flex, `pesign`, `grub-mkstandalone`, `grub-mkfont`, `grub-script-check`, and DejaVu Sans Mono.
 Ubuntu package names for missing compiler tools and artwork support are `build-essential`, `binutils`, `bison`, `flex`, `pesign`, and `python3-pil`.
-Trial installation also needs `sudo`, `mokutil`, `efibootmgr`, `findmnt`, and `lsblk`.
+Host installation also needs `sudo`, `mokutil`, `efibootmgr`, `findmnt`, and `lsblk`.
+Permanent installation uses the existing `update-grub` command as well.
 Do not upgrade GRUB to satisfy these prerequisites; source and EFI module versions must match.
 
-Create private read-only snapshots using interactive sudo authentication:
+Permanent installation takes its own snapshots.
+For manual staging and optional one-time trials, create private read-only snapshots using interactive sudo authentication:
 
 [source,shell]
 ----
@@ -79,6 +125,14 @@ General preview installation through `make fancy` remains confined to the dispos
 == Validate before installation
 
 `make test` checks menu preservation, the controller, layout, and trial management using temporary roots and simulated firmware commands.
+It also checks persistent installation, in-place updates, kernel menu refresh, and failure recovery without writing host firmware.
+Run just the host Fancy regressions with:
+
+[source,shell]
+----
+python3 -m unittest discover -s tools -p 'host_fancy*_test.py' -v
+----
+
 The Secure Boot VM checks need `qemu-system-x86`, `ovmf`, `btrfs-progs`, `dosfstools`, `gdisk`, `mtools`, `python3-pil`, `python3-virt-firmware`, and `python3-pefile`.
 Only file-backed virtual disks and private firmware variables are used.
 No host disks or host firmware variables are exposed to QEMU.
@@ -136,7 +190,7 @@ Set `HOST_FANCY_DEMO` to a fresh directory for another recording.
 
 image::mockups/fancy-demo.png[Confirmed Fancy controller baseline recorded in Secure Boot QEMU,960]
 
-== Install, enroll, and try once
+== Optional one-time trial
 
 These commands modify the host and require interactive sudo authentication.
 Complete the private snapshots, stage review, and VM checks first.
@@ -144,7 +198,7 @@ Remove an existing separate trial before replacing it.
 
 [source,shell]
 ----
-make host-fancy-install
+make host-fancy-trial-install
 make host-fancy-enroll
 ----
 
@@ -178,7 +232,7 @@ A previously reviewed stage can be restored without re-enrollment when its hash 
 
 [source,shell]
 ----
-make host-fancy-install HOST_FANCY_STAGE=build/a-reviewed-stage
+make host-fancy-trial-install HOST_FANCY_STAGE=build/a-reviewed-stage
 make host-fancy-once
 ----
 

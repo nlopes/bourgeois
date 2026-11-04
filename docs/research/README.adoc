@@ -26,7 +26,7 @@ The xref:implementation-plan.adoc[approved plan] defines the initial target and 
 The xref:implementation.adoc[implementation notes] describe boot ownership and native rendering.
 The xref:preview.adoc[preview guide] covers setup, controls, tests, recovery, and packages.
 The xref:validation.adoc[validation record] lists the tested environment and remaining limits.
-The xref:host-fancy.adoc[host trial guide] covers the matching GRUB 2.14 image, image hash enrollment, one-time boot selection, and removal.
+The xref:host-fancy.adoc[host installation guide] covers compiling and installing Fancy as the persistent default, image hash enrollment, kernel menu updates, optional one-time trials, and removal.
 The xref:fancy-performance.adoc[performance record] covers animation, the withdrawn optimization, and the reproducible Secure Boot benchmark.
 Both editions use the recessed architectural nameplates from the original concept.
 The xref:../../assets/README.adoc[artwork notes and prompts] describe the background asset.

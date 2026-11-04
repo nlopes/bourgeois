@@ -175,15 +175,33 @@ They keep Ubuntu's original EFI binary intact.
 See xref:docs/research/preview.adoc[the preview guide] for controls, recovery, removal, and packaging.
 See xref:docs/research/validation.adoc[the validation record] for checked behavior and limits.
 
-=== One-time host trial
+=== Host installation
 
 The Ubuntu 26.04 host workflow uses a separate GRUB 2.14 image and explicit Secure Boot hash enrollment.
-The host trial embeds trusted fonts, preserves the native boot commands, and uses the working 2560x1440 setting.
+Install or reinstall the current checkout with:
+
+[source,shell]
+----
+make host-fancy-install
+----
+
+This takes fresh private menu snapshots, compiles Fancy, backs up the existing installation, and makes Fancy the default for every boot.
+Run the same command after changing Fancy's code or artwork.
+An existing trial is upgraded in place; there is no separate removal or one-time selection step.
+When the new image hash needs enrollment, the command asks for a temporary password.
+Confirm `Enroll MOK` and the displayed hash in MokManager on the next reboot.
+Ubuntu remains available in the firmware menu for recovery.
+
+The installed menu follows kernel updates through `update-grub`, using the distribution's current boot commands, entry IDs, and authentication.
+Trusted fonts and artwork stay embedded in the EFI image.
+The firmware mode remains `2560x1440,auto`.
+Use `make host-fancy-uninstall` to return to Ubuntu/Slim as the default.
+
 `make host-fancy-stage` builds without host boot changes; `make host-fancy-check` tests the staged image in Secure Boot QEMU.
-Installation, enrollment, and `make host-fancy-once` are separate steps, keeping Ubuntu/Slim as the normal default.
+For a one-time trial, use `make host-fancy-trial-install`, `make host-fancy-enroll`, and `make host-fancy-once` instead.
 Both earlier performance previews were withdrawn after physical black-screen reports; the host guide covers restoring a reviewed stage.
 The subsequent isolated cadence and controller trials worked physically and are now the default Fancy source and stage.
-See xref:docs/research/host-fancy.adoc[the host trial guide] for prerequisites, exact commands, verification limits, and removal.
+See xref:docs/research/host-fancy.adoc[the host installation guide] for prerequisites, validation, trial commands, and removal.
 
 To regenerate the walking GIF and its extracted still from the staged image, use the host guide's Secure Boot VM prerequisites and run:
 

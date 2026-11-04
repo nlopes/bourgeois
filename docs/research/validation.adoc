@@ -244,6 +244,24 @@ image::mockups/doorway-feedback.gif[Fancy brightens the doorway on Space and ret
 
 image::mockups/slim-doorway-feedback.png[Slim shows the steady amber light at the selected Windows gate,width=800]
 
+== Permanent Fancy installation
+
+The 2026-11-04 permanent installer compiles the current checkout, upgrades an existing trial or installed image in place, and selects Fancy through persistent BootOrder.
+`make test` passed the C tests and all 112 Python tests.
+The host Fancy regressions cover image integrity, withdrawn-image rejection, trial migration, repeated installation without duplicate entries, pending firmware requests, copy and generation failures, enrollment cancellation, firmware order rejection, and uninstall recovery.
+Kernel-refresh tests generate a new Fancy menu from changed native kernel commands while leaving the installed EFI image unchanged.
+Invalid regenerated menus remove the stale Fancy configuration so the loader can use the distribution menu.
+
+A fresh GRUB 2.14 permanent image loaded its disk configuration and rendered at 2560x1440 in disposable Secure Boot QEMU.
+The trusted image passed repeated-arrow gate facing, walking cleanup outside the selected doorway light, Esc recovery, cancellation beyond 30 seconds, Space activation at a gate, immediate L/W routing, and the untouched Linux countdown.
+Shim rejected the untrusted and altered images.
+Actual courtyard and technical-menu captures were inspected.
+The VM comparisons exclude the nine animated stars from standing-pose checks and account for each gate's existing amber light when checking the walking path.
+Private builds, firmware variables, logs, and captures remain under ignored `build/` storage.
+
+These checks use file-backed virtual disks, routing fixtures, and simulated firmware commands for the installer.
+They do not install the permanent image on the physical host, perform real Windows chainloading, or confirm a new image hash in the physical MokManager.
+
 == Validation limits
 
 An additional stock GRUB 2.14 UEFI rendering check on the Linux host reproduced the centered black handoff rectangle.

@@ -13,6 +13,7 @@ import lab
 from grub_config import generate, hook, blocks, entry_id
 import theme
 import hero
+import doorway
 
 STAGE = lab.BUILD / 'preview'
 
@@ -79,6 +80,7 @@ EOF
     ):
         (STAGE / f'test-{name}.cfg').write_text(source + modified)
     theme.build(STAGE, icon_size=1 if edition == 'slim' else 0)
+    doorway.atlas(STAGE)
     if edition == 'slim':
         hero.icons(STAGE, 800, 600)
         theme_file = STAGE / 'theme.txt'

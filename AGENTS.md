@@ -24,6 +24,7 @@ Keep the README focused on the project and its setup.
 - Slim keeps the distribution EFI binary unchanged. Use the compact two-entry menu with Up/Down and Enter. The lab's lowercase `l`/`w` shortcuts boot immediately; the host artwork follows the existing menu's controls and shows a static hero at the selected door.
 - Fancy uses a native module in a separate EFI image. Left/Right walks; Space enters only at a gate; L/W boots immediately.
 - Both editions use rear-facing gate poses that look up at the nameplates. Fancy adds twinkling stars and a short inward turn/step on Space, and keeps the hero in GRUB's boot handoff background.
+- Doorway feedback uses a soft amber light behind the selected hero. Slim keeps it static; Fancy fades it in on arrival, brightens it on Space, and retains it with the boot handoff hero.
 - Keep Linux and Windows as the two OS choices. Default to Linux after 30 seconds, cancel the timer on input, and keep Esc as the route to the technical menu.
 - Keep the shared stone nameplates in the background artwork and preserve each edition's title, controls, and visual layout. See `assets/README.adoc` for asset sources.
 - Keep host snapshots, firmware identifiers, trust hashes, hardware inventories, and private logs in ignored `build/` storage. Use synthetic identifiers in committed fixtures and publish only captures without host details or personal metadata.

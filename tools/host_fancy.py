@@ -12,7 +12,8 @@ import subprocess
 import sys
 
 from grub_config import blocks, entry_id, hook
-from host_checks import FONT
+from host_checks import FONT, require_tools
+import doorway
 
 ROOT = Path(__file__).resolve().parent.parent
 VERSION = '2.14-2ubuntu1'
@@ -162,6 +163,7 @@ def authenticode(image, pesign):
 
 
 def stage(source, build, snapshot, output, pesign, module_source=None):
+    require_tools('stage')
     source, build, snapshot, output = [p.resolve() for p in (source, build, snapshot, output)]
     module_source = (module_source or ROOT / 'fancy/bourgeois.c').resolve()
     if not module_source.is_file():
@@ -187,6 +189,7 @@ def stage(source, build, snapshot, output, pesign, module_source=None):
     (output / 'bootstrap.cfg').write_text(bootstrap(uuid))
     assets = output / 'bourgeois'
     assets.mkdir()
+    doorway.atlas(assets)
     for name in ('courtyard-nameplates.png', 'traveler.png', 'traveler-gates.png'):
         shutil.copyfile(ROOT / 'assets' / name, assets / name)
     shutil.copyfile(ROOT / 'assets/DejaVu-font-license.txt', assets / 'font-license.txt')

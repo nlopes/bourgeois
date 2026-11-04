@@ -183,6 +183,72 @@ def run(edition, case):
         lab.send_key('spc')
         wait_for(serial, 'BOURGEOIS_WINDOWS_FIXTURE', serial_offset)
         print('PASS fancy: walking and reversal did not boot; Space at Windows routed fixture')
+    elif case == 'feedback':
+        from PIL import Image, ImageChops
+        import doorway
+        assert edition == 'fancy'
+        lab.send_key('spc')
+        time.sleep(0.3)
+        capture('fancy-doorway-unlit')
+        lab.send_key('left')
+        time.sleep(2)
+        capture('fancy-doorway-linux')
+        with Image.open(lab.BUILD / 'evidence/fancy-doorway-linux.png') as image:
+            light_width, light_height, top = doorway.geometry(*image.size)
+            linux_x = 326 * image.width // 1672
+            windows_x = 1358 * image.width // 1672
+            sample_y = top + light_height // 2
+            linux_sample = (linux_x - light_width // 4, sample_y)
+            windows_sample = (windows_x - light_width // 4, sample_y)
+            linux_red = image.convert('RGB').getpixel(linux_sample)[0]
+        with Image.open(lab.BUILD / 'evidence/fancy-doorway-unlit.png') as image:
+            assert linux_red > image.convert('RGB').getpixel(linux_sample)[0] + 5
+            dark = image.convert('RGB').getpixel(linux_sample)
+        lab.send_key('right')
+        time.sleep(0.5)
+        capture('fancy-doorway-departed')
+        with Image.open(lab.BUILD / 'evidence/fancy-doorway-departed.png') as image:
+            assert image.convert('RGB').getpixel(linux_sample) == dark
+        time.sleep(2.3)
+        capture('fancy-doorway-windows')
+        lab.send_key('right')
+        time.sleep(0.3)
+        capture('fancy-doorway-repeated')
+        with Image.open(lab.BUILD / 'evidence/fancy-doorway-windows.png') as first, \
+                Image.open(lab.BUILD / 'evidence/fancy-doorway-repeated.png') as second:
+            region = (windows_sample[0] - 5, sample_y - 5,
+                      windows_sample[0] + 5, sample_y + 5)
+            assert not ImageChops.difference(first.crop(region).convert('RGB'),
+                                             second.crop(region).convert('RGB')).getbbox()
+            steady = first.convert('RGB').getpixel(windows_sample)[0]
+            scene_size = first.size
+            footer_region = (first.width // 4, first.height * 4 // 5,
+                             first.width * 3 // 4, first.height)
+            footer = first.convert('RGB').crop(footer_region)
+        brightest = steady
+        with lab.QMP() as monitor:
+            monitor.command('send-key', {'keys': [{'type': 'qcode', 'data': 'spc'}],
+                                         'hold-time': 80})
+            for index in range(15):
+                path = lab.BUILD / 'evidence' / f'fancy-doorway-entry-{index}.png'
+                monitor.command('screendump', {'filename': str(path), 'format': 'png'})
+                with Image.open(path) as image:
+                    if image.size == scene_size:
+                        rgb = image.convert('RGB')
+                        red = rgb.getpixel(windows_sample)[0]
+                        in_scene = not ImageChops.difference(footer, rgb.crop(footer_region)).getbbox()
+                        if in_scene and red > brightest:
+                            brightest = red
+                            image.save(lab.BUILD / 'evidence/fancy-doorway-entry.png')
+                time.sleep(0.03)
+        # PNG capture can sample only the first light step of the 240 ms entry.
+        # Check that visible step separately from the sustained handoff peak.
+        assert brightest > steady, (steady, brightest)
+        wait_for(serial, 'BOURGEOIS_WINDOWS_FIXTURE', serial_offset)
+        capture('fancy-doorway-handoff')
+        with Image.open(lab.BUILD / 'evidence/fancy-doorway-handoff.png') as image:
+            assert image.convert('RGB').getpixel(windows_sample)[0] > steady + 5
+        print('PASS fancy: arrival light, departure cleanup, repeated arrows, and Space brightening')
     elif case == 'stars':
         from PIL import Image, ImageChops
         assert edition == 'fancy'
@@ -230,7 +296,7 @@ def run(edition, case):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('case', choices=['all', 'timeout', 'cancel', 'windows', 'linux', 'technical', 'walking', 'stars', 'doors', 'fallbacks'])
+    parser.add_argument('case', choices=['all', 'timeout', 'cancel', 'windows', 'linux', 'technical', 'walking', 'stars', 'doors', 'feedback', 'fallbacks'])
     args = parser.parse_args()
     lock = (lab.VM / 'boot-test.lock').open('w')
     try:
@@ -238,7 +304,7 @@ if __name__ == '__main__':
     except BlockingIOError:
         parser.error('Another boot test is using this VM')
     edition = json.loads((lab.BUILD / 'preview.json').read_text())['edition']
-    cases = (['cancel', 'stars', 'walking', 'technical', 'windows', 'linux', 'timeout'] if edition == 'fancy'
+    cases = (['cancel', 'stars', 'feedback', 'walking', 'technical', 'windows', 'linux', 'timeout'] if edition == 'fancy'
              else ['cancel', 'doors', 'technical', 'windows', 'linux', 'timeout']) if args.case == 'all' else [args.case]
     for case in cases:
         run(edition, case)

@@ -9,12 +9,12 @@ enum failure
 {
   MODE, VIEWPORT, INFO, RESTORE, CONSOLE, GFXTERM, WINDOW, BACKGROUND,
   SPRITES, SCALE, MIRROR, AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP,
-  POSES, HANDOFF_SCALE
+  POSES, HANDOFF_SCALE, DOORWAY, LIGHT_DRAW
 };
 enum terminal { CONSOLE_ACTIVE, GFXTERM_ACTIVE };
 static unsigned failures;
 static unsigned recovery_calls, window_calls, live_bitmaps, load_calls, create_calls;
-static unsigned draw_calls, key_calls, scale_calls, gate_frames;
+static unsigned draw_calls, key_calls, scale_calls, gate_frames, doorway_frames;
 static unsigned terminal_width, terminal_height;
 static enum terminal output;
 static int functional, video_active, no_menu, clock_step;
@@ -27,7 +27,7 @@ static struct grub_menu test_menu;
 static int inputs[64];
 static char *arguments[] = { (char *) "linux", (char *) "windows",
                             (char *) "background.png", (char *) "sprites.png",
-                            (char *) "gates.png" };
+                            (char *) "gates.png", (char *) "doorway.png" };
 struct grub_gfxterm_background grub_gfxterm_background;
 grub_err_t grub_errno;
 char grub_errmsg[GRUB_MAX_ERRMSG];
@@ -48,7 +48,7 @@ reset (void)
   grub_gfxterm_background.bitmap = NULL;
   assert (live_bitmaps == 0);
   failures = recovery_calls = window_calls = load_calls = create_calls = draw_calls = key_calls = 0;
-  scale_calls = gate_frames = 0;
+  scale_calls = gate_frames = doorway_frames = 0;
   terminal_width = 800;
   terminal_height = 600;
   functional = video_active = 1;
@@ -77,7 +77,7 @@ reset (void)
 static grub_err_t
 run (void)
 {
-  grub_err_t err = run_scene (NULL, 5, arguments);
+  grub_err_t err = run_scene (NULL, 6, arguments);
   assert (live_bitmaps == (grub_gfxterm_background.bitmap ? 1U : 0U));
   return err;
 }
@@ -191,7 +191,8 @@ static void
 failures_before_boot (void)
 {
   enum failure operations[] = { VIEWPORT, BACKGROUND, SPRITES, SCALE, MIRROR,
-                                AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP, POSES };
+                                AUTH, DEFAULT, ARM_TIMER, STOP_TIMER, DRAW, SWAP, POSES,
+                                DOORWAY };
   unsigned i;
   for (i = 0; i < sizeof operations / sizeof operations[0]; i++)
     {
@@ -220,10 +221,20 @@ enter_and_handoff (void)
   for (i = 0; i < 64; i++)
     inputs[i] = GRUB_TERM_NO_KEY;
   inputs[0] = GRUB_TERM_KEY_RIGHT;
-  inputs[8] = ' ';
+  inputs[10] = ' ';
   assert (run () == GRUB_ERR_NONE);
   assert ((gate_frames & 13) == 13);
+  assert ((doorway_frames & (1U << 3)) && (doorway_frames & (1U << 7)));
   assert (strcmp (default_value, "1") == 0);
+  reset ();
+  clock_step = 100;
+  for (i = 0; i < 64; i++)
+    inputs[i] = GRUB_TERM_NO_KEY;
+  inputs[0] = GRUB_TERM_KEY_RIGHT;
+  failures = 1U << LIGHT_DRAW;
+  assert (run () != GRUB_ERR_NONE);
+  assert (strcmp (default_value, "previous") == 0);
+  assert (live_bitmaps == 0 && functional);
   reset ();
   terminal_width = 1024;
   terminal_height = 768;
@@ -404,6 +415,11 @@ grub_video_blit_bitmap (struct grub_video_bitmap *bitmap, int operation,
   assert ((unsigned) sy + h <= bitmap->mode_info.height);
   if (bitmap->mode_info.width == (600 / 7 * 3 / 4) * 4 && w)
     gate_frames |= 1U << ((unsigned) sx / w);
+  if (bitmap->mode_info.width == ((800 * 320 + 836) / 1672) * 8 && w)
+    {
+      doorway_frames |= 1U << ((unsigned) sx / w);
+      if (fail (LIGHT_DRAW)) return GRUB_ERR_TEST_FAILURE;
+    }
   draw_calls++;
   return fail (DRAW) ? GRUB_ERR_TEST_FAILURE : GRUB_ERR_NONE;
 }
@@ -432,6 +448,7 @@ grub_video_bitmap_load (struct grub_video_bitmap **bitmap, const char *path)
   grub_err_t err;
   (void) path;
   load_calls++;
+  if (load_calls == 4 && fail (DOORWAY)) return GRUB_ERR_TEST_FAILURE;
   if (load_calls == 3 && fail (POSES)) return GRUB_ERR_TEST_FAILURE;
   if (fail (load_calls == 1 ? BACKGROUND : SPRITES)) return GRUB_ERR_TEST_FAILURE;
   err = grub_video_bitmap_create (bitmap, 4, 1, 0);
@@ -456,7 +473,7 @@ grub_video_bitmap_create_scaled (struct grub_video_bitmap **bitmap, int w, int h
   (void) method;
   assert (src && w > 0 && h > 0);
   scale_calls++;
-  if (scale_calls == 4 && fail (HANDOFF_SCALE)) return GRUB_ERR_TEST_FAILURE;
+  if (scale_calls == 5 && fail (HANDOFF_SCALE)) return GRUB_ERR_TEST_FAILURE;
   if (fail (SCALE)) return GRUB_ERR_TEST_FAILURE;
   err = grub_video_bitmap_create (bitmap, (unsigned) w, (unsigned) h, 0);
   if (err)

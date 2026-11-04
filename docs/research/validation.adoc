@@ -224,6 +224,26 @@ The Slim guest suite passed cancellation, Esc recovery, L/W routing, and the unt
 An additional Up/Down check captured both rear gate poses and confirmed that switching back to Linux restored the same complete scene.
 This update has not been tested on the physical host or with real Windows chainloading.
 
+== Doorway feedback
+
+The 2026-11-04 update adds a soft amber light behind the hero at a gate.
+Fancy fades it in over 240 milliseconds after arrival and brightens it during the existing Space turn and step.
+Leaving clears the light, and repeating the same arrow keeps the steady level.
+The terminal handoff retains both the light and hero.
+Slim uses the same steady light in its selected-entry icons.
+
+The Ubuntu 24.04 x86_64 suite passed all 86 Python tests with no skips, including font-dependent artwork generation.
+The C tests passed with GCC and Clang, plus Clang static analysis, AddressSanitizer with leak detection, and UndefinedBehaviorSanitizer.
+The native module compiled against the pinned GRUB `2.12-1ubuntu7.3` headers with warnings treated as errors.
+The Fancy capture check compares actual pixels at both thresholds, checks departure cleanup and repeated arrows, and measures Space brightening while the scene's help text is still visible.
+Slim's Up/Down check captured both light positions and confirmed that returning to Linux restored the same complete scene.
+Both editions retain the existing guest boot and recovery checks.
+This update has not been tested on the physical host or with real Windows chainloading.
+
+image::mockups/doorway-feedback.gif[Fancy brightens the doorway on Space and retains the hero and light during handoff,width=640]
+
+image::mockups/slim-doorway-feedback.png[Slim shows the steady amber light at the selected Windows gate,width=800]
+
 == Validation limits
 
 An additional stock GRUB 2.14 UEFI rendering check on the Linux host reproduced the centered black handoff rectangle.

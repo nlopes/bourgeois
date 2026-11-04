@@ -49,7 +49,7 @@ menuentry 'Windows fixture' --id input-windows {
   echo BOURGEOIS_INPUT_WINDOWS_OK
 }
 set timeout=-1
-bourgeois input-linux input-windows (memdisk)/boot/grub/bourgeois/courtyard-nameplates.png (memdisk)/boot/grub/bourgeois/traveler.png (memdisk)/boot/grub/bourgeois/traveler-gates.png
+bourgeois input-linux input-windows (memdisk)/boot/grub/bourgeois/courtyard-nameplates.png (memdisk)/boot/grub/bourgeois/traveler.png (memdisk)/boot/grub/bourgeois/traveler-gates.png (memdisk)/boot/grub/bourgeois/doorway.png
 ''')
     (fake / 'fancy-demo.cfg').write_text('''# Disposable recording fixture; no OS boot commands.
 serial --unit=0 --speed=115200
@@ -65,7 +65,7 @@ menuentry 'Windows' --id demo-windows {
   echo 'Windows selected'
 }
 set timeout=-1
-bourgeois demo-linux demo-windows (memdisk)/boot/grub/bourgeois/courtyard-nameplates.png (memdisk)/boot/grub/bourgeois/traveler.png (memdisk)/boot/grub/bourgeois/traveler-gates.png
+bourgeois demo-linux demo-windows (memdisk)/boot/grub/bourgeois/courtyard-nameplates.png (memdisk)/boot/grub/bourgeois/traveler.png (memdisk)/boot/grub/bourgeois/traveler-gates.png (memdisk)/boot/grub/bourgeois/doorway.png
 ''')
     disk_file(base / 'root.btrfs', 512 * 1024**2)
     run('mkfs.btrfs', '-q', '-f', '-U', manifest['root_uuid'], '--rootdir', base / 'root',
@@ -225,7 +225,8 @@ def benchmark_scene(monitor, directory, stage):
     command = ('bourgeois ' + ' '.join(ids)
                + ' (memdisk)/boot/grub/bourgeois/courtyard-nameplates.png'
                + ' (memdisk)/boot/grub/bourgeois/traveler.png'
-               + ' (memdisk)/boot/grub/bourgeois/traveler-gates.png\n')
+               + ' (memdisk)/boot/grub/bourgeois/traveler-gates.png'
+               + ' (memdisk)/boot/grub/bourgeois/doorway.png\n')
     debug = directory / 'debug.log'
     results = {}
     for profile in ('countdown', 'walking', 'manual'):

@@ -38,8 +38,8 @@ Run commands from the repository root.
 Keep protected snapshots, firmware identifiers, manifests, trust hashes, and local logs under ignored `build/` storage.
 They are deliberately omitted from published documentation and recordings.
 
-The build needs Python 3.11+, GCC, Make, binutils, Bison, Flex, `pesign`, `grub-mkstandalone`, `grub-mkfont`, `grub-script-check`, and DejaVu Sans Mono.
-Ubuntu package names for missing compiler tools are `build-essential`, `binutils`, `bison`, `flex`, and `pesign`.
+The build needs Python 3.11+, Pillow, GCC, Make, binutils, Bison, Flex, `pesign`, `grub-mkstandalone`, `grub-mkfont`, `grub-script-check`, and DejaVu Sans Mono.
+Ubuntu package names for missing compiler tools and artwork support are `build-essential`, `binutils`, `bison`, `flex`, `pesign`, and `python3-pil`.
 Trial installation also needs `sudo`, `mokutil`, `efibootmgr`, `findmnt`, and `lsblk`.
 Do not upgrade GRUB to satisfy these prerequisites; source and EFI module versions must match.
 

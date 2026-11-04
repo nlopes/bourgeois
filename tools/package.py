@@ -8,6 +8,7 @@ import tarfile
 import lab
 import theme
 import hero
+import doorway
 from native import FONT_SIZES, SOURCE_ARCHIVES
 
 
@@ -32,6 +33,7 @@ def package():
         for name in ('assets', 'tools', 'docs'):
             shutil.copytree(lab.ROOT / name, stage / name, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
         theme.build(stage / 'theme', icon_size=1 if edition == 'slim' else 0)
+        doorway.atlas(stage / 'theme')
         if edition == 'slim':
             hero.icons(stage / 'theme', 800, 600)
             theme_file = stage / 'theme/theme.txt'

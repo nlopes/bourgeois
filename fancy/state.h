@@ -41,6 +41,27 @@ scene_gate_frame (const struct scene_state *s, unsigned long long now)
   return -1;
 }
 
+/* Repeated arrows retain the original arrival time. Leaving a gate removes
+   its light immediately, so the next frame cannot leave a lit trail. */
+static int
+scene_doorway_frame (const struct scene_state *s, unsigned long long now)
+{
+  unsigned long long elapsed, arrived;
+  unsigned distance;
+  if (s->x != s->target
+      || (s->x != SCENE_LINUX_GATE_X && s->x != SCENE_WINDOWS_GATE_X))
+    return -1;
+  if (s->entering != SCENE_WAIT)
+    {
+      elapsed = now - s->enter_started;
+      return 4 + (elapsed >= 180 ? 3 : (int) (elapsed / 60));
+    }
+  distance = s->target > s->origin ? s->target - s->origin : s->origin - s->target;
+  arrived = s->move_started + (distance * 5 + 2) / 3;
+  elapsed = now > arrived ? now - arrived : 0;
+  return elapsed >= 240 ? 3 : (int) (elapsed / 80);
+}
+
 static enum scene_action
 scene_step (struct scene_state *s, unsigned long long now, enum scene_key key)
 {

@@ -6,6 +6,7 @@ import unittest
 from host_checks import FONT, missing_tools
 from host_theme import stage
 from host_install import verify_stage
+from hero import icon_height
 
 try:
     from PIL import Image, ImageFont
@@ -36,12 +37,12 @@ class HostThemeTests(unittest.TestCase):
                 self.assertEqual(verify_stage(Path(directory))['size'], [width, height])
                 for name, center in (('ubuntu', 326 / 1672), ('windows', 1358 / 1672)):
                     with Image.open(Path(directory) / 'icons' / f'{name}.png') as icon:
-                        self.assertEqual(icon.size, (width, height // 7))
+                        self.assertEqual(icon.size, (width, icon_height(width, height)))
                         left, top, right, bottom = icon.getchannel('A').getbbox()
                         self.assertAlmostEqual((left + right) / 2, center * width,
                                                delta=width / 25)
                         # The rest of the courtyard must remain unobscured.
-                        self.assertLess(right - left, width / 8)
+                        self.assertLess(right - left, width / 5)
                         self.assertGreater(bottom - top, height / 15)
                 self.assertEqual((Path(directory) / 'icons/ubuntu.png').read_bytes(),
                                  (Path(directory) / 'icons/gnu-linux.png').read_bytes())

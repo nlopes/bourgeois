@@ -186,7 +186,7 @@ fi
   set bourgeois_trace=1
   insmod bourgeois
   if [ "${{feature_bourgeois}}" = "1" ]; then
-    bourgeois '{linux_id}' '{windows_id}' $prefix/bourgeois/courtyard-nameplates.png $prefix/bourgeois/traveler.png $prefix/bourgeois/traveler-gates.png
+    bourgeois '{linux_id}' '{windows_id}' $prefix/bourgeois/courtyard-nameplates.png $prefix/bourgeois/traveler.png $prefix/bourgeois/traveler-gates.png $prefix/bourgeois/doorway.png
   fi
 fi
 ''' + finish

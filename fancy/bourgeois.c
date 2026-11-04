@@ -333,21 +333,22 @@ static grub_err_t
 run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
 {
   struct grub_video_bitmap *background = 0, *actor = 0, *left_actor = 0;
-  struct grub_video_bitmap *gate_actor = 0;
+  struct grub_video_bitmap *gate_actor = 0, *doorway = 0;
   struct scene_state state = { 0 };
   enum scene_action action = SCENE_WAIT;
   grub_err_t err = GRUB_ERR_NONE, recovery_err;
   struct grub_error_saved saved;
   unsigned x, y;
   int frame_width = 0, frame_height = 0, gate_width = 0;
+  int light_width = 0, light_height = 0, light_top = 0;
   unsigned frames = 0, render_total = 0, render_max = 0;
   char *console[] = { (char *) "console" };
   const char *mode = grub_env_get ("bourgeois_gfxmode");
   if (!mode || !*mode)
     mode = grub_env_get ("gfxmode");
-  if (argc != 5 || !find_entry (args[0], 0) || !find_entry (args[1], 0)
+  if (argc != 6 || !find_entry (args[0], 0) || !find_entry (args[1], 0)
       || grub_strcmp (args[0], args[1]) == 0)
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: expected two unique entry IDs and three assets");
+    return grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: expected two unique entry IDs and four assets");
   err = grub_env_set ("timeout", "-1");
   if (err)
     return err;
@@ -398,6 +399,12 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
   gate_width = frame_height * 3 / 4;
   if ((err = load_scaled (&gate_actor, args[4], gate_width * 4, frame_height)))
     goto done;
+  /* Match tools/doorway.py's source-space threshold and eight light levels. */
+  light_width = (width * 320 + 836) / 1672;
+  light_height = (height * 128 + 470) / 941;
+  light_top = (height * 580 + 470) / 941;
+  if ((err = load_scaled (&doorway, args[5], light_width * 8, light_height)))
+    goto done;
   scene_init (&state, grub_get_time_ms ());
   trace ("BOURGEOIS_SCENE_READY");
   while (action == SCENE_WAIT)
@@ -415,6 +422,18 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       if (err)
         goto done;
       stars (now);
+      {
+        int light_frame = scene_doorway_frame (&state, now);
+        if (light_frame >= 0)
+          {
+            err = grub_video_blit_bitmap (doorway, GRUB_VIDEO_BLIT_BLEND,
+                                          state.x * width / SCENE_WIDTH - light_width / 2,
+                                          light_top, light_frame * light_width, 0,
+                                          light_width, light_height);
+            if (err)
+              goto done;
+          }
+      }
       label ("CHOOSE YOUR KINGDOM", width / 2, 49 * ui_scale, 1);
       label ("A journey begins with a door", width / 2, 72 * ui_scale, 0);
       {
@@ -463,7 +482,8 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
                      "BOURGEOIS_RENDER %ux%u frames=%u avg_ms=%u max_ms=%u bitmap_bytes=%u",
                      width, height, frames, render_total / frames, render_max,
                      background->mode_info.pitch * height + actor->mode_info.pitch * frame_height * 2
-                     + gate_actor->mode_info.pitch * frame_height);
+                     + gate_actor->mode_info.pitch * frame_height
+                     + doorway->mode_info.pitch * light_height);
       trace (stats);
     }
   if (!err && (action == SCENE_BOOT_LINUX || action == SCENE_BOOT_WINDOWS))
@@ -472,12 +492,19 @@ run_scene (grub_command_t cmd __attribute__ ((unused)), int argc, char **args)
       int gate = action == SCENE_BOOT_LINUX ? SCENE_LINUX_GATE_X : SCENE_WINDOWS_GATE_X;
       int frame = state.entering != SCENE_WAIT ? 3 : 2;
       int step = frame == 3 ? 2 * ui_scale : 0;
-      if (!scene_stamp (&dst, &src, frame * gate_width,
+      struct scene_pixels light = bitmap_pixels (doorway);
+      int light_frame = state.entering != SCENE_WAIT ? 7 : 3;
+      if (!scene_stamp (&dst, &light, light_frame * light_width,
+                         gate * width / SCENE_WIDTH - light_width / 2,
+                         light_top, light_width, light_height))
+        err = grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: unsupported doorway pixel format");
+      else if (!scene_stamp (&dst, &src, frame * gate_width,
                          gate * width / SCENE_WIDTH - gate_width / 2,
                          height * 73 / 100 - frame_height - step, gate_width, frame_height))
         err = grub_error (GRUB_ERR_BAD_ARGUMENT, "bourgeois: unsupported sprite pixel format");
     }
   grub_video_bitmap_destroy (gate_actor);
+  grub_video_bitmap_destroy (doorway);
   grub_video_bitmap_destroy (left_actor);
   grub_video_bitmap_destroy (actor);
   saved.grub_errno = err;
@@ -508,7 +535,7 @@ GRUB_MOD_INIT (bourgeois)
 {
   grub_env_set ("feature_bourgeois", "1");
   grub_env_export ("feature_bourgeois");
-  command = grub_register_command ("bourgeois", run_scene, "LINUX_ID WINDOWS_ID BACKGROUND SPRITES GATE_SPRITES",
+  command = grub_register_command ("bourgeois", run_scene, "LINUX_ID WINDOWS_ID BACKGROUND SPRITES GATE_SPRITES DOORWAY",
                                    "Walk to an operating system gate.");
 }
 GRUB_MOD_FINI (bourgeois)

@@ -74,5 +74,23 @@ int main (void)
   assert (s.entering == SCENE_WAIT);
   scene_init (&s, 0);
   assert (scene_gate_frame (&s, 0) == -1);
+  assert (scene_doorway_frame (&s, 0) == -1);
+  scene_step (&s, 0, SCENE_LEFT);
+  scene_step (&s, 1221, SCENE_NONE);
+  assert (scene_doorway_frame (&s, 1221) == -1);
+  scene_step (&s, 1222, SCENE_NONE);
+  assert (scene_doorway_frame (&s, 1222) == 0);
+  assert (scene_doorway_frame (&s, 1302) == 1);
+  assert (scene_doorway_frame (&s, 1382) == 2);
+  assert (scene_doorway_frame (&s, 1462) == 3);
+  scene_step (&s, 1463, SCENE_LEFT);
+  assert (scene_doorway_frame (&s, 1463) == 3);
+  scene_step (&s, 1464, SCENE_SPACE);
+  assert (scene_doorway_frame (&s, 1464) == 4);
+  assert (scene_doorway_frame (&s, 1524) == 5);
+  assert (scene_doorway_frame (&s, 1584) == 6);
+  assert (scene_doorway_frame (&s, 1644) == 7);
+  scene_step (&s, 1650, SCENE_RIGHT);
+  assert (scene_doorway_frame (&s, 1650) == -1);
   return 0;
 }

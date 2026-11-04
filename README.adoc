@@ -13,6 +13,7 @@ bourgeois themes GRUB while preserving its existing OS boot logic and recovery p
 Slim uses the unchanged distribution binary and a hero that snaps between doors.
 Fancy adds a native GRUB module for walking and animated sand.
 At a gate, both editions show the traveler from behind, looking up toward the stone nameplate.
+An amber pool of light marks the selected doorway in Slim and a reached gate in Fancy.
 
 image::docs/research/mockups/fancy-demo.gif[Fancy walks left to right to left and selects Linux,960]
 
@@ -153,6 +154,9 @@ python3 tools/lab.py reset
 
 Left/Right walks to a gate; Space turns the traveler fully inward and takes a small step at the threshold.
 The entry sequence lasts 240 milliseconds; Esc can still return to the technical menu during it.
+The doorway light fades in over 240 milliseconds after arrival and brightens during the Space turn and step.
+It clears when the traveler leaves and stays with the hero behind boot messages.
+See xref:docs/research/mockups/doorway-feedback.gif[the doorway feedback capture].
 L/W boots immediately and Esc returns to Ubuntu's technical menu.
 Small stars twinkle independently in the night sky.
 The animated sand and live seconds share the 30-second Linux timer.

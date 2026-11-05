@@ -50,6 +50,7 @@ See the README for setup and verified commands.
 - `make host-install` backs up and updates the existing host theme with sudo.
 - `make host-rollback` restores the last host theme backup and refreshes GRUB.
 - `make host-fancy-stage` builds an isolated EFI trial for the inspected Ubuntu 26.04 host.
+- `make host-fancy-rebuild` takes fresh menu snapshots, builds a new embedded-menu trial, and runs Secure Boot VM validation without installing it.
 - `make host-fancy-check` checks that image in disposable Secure Boot QEMU firmware.
 - `make host-fancy-benchmark` measures VM rendering and checks shortcuts, gate activation, and the full countdown.
 - `make host-fancy-demo` records left/right/left movement and Linux fixture selection as a GIF and extracts a still.

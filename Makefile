@@ -48,9 +48,11 @@ host-install: host-preflight host-stage
 host-rollback: host-python
 	$(PYTHON) tools/host_checks.py install --sudo
 	sudo $(PYTHON) tools/host_install.py rollback --backup "$(BACKUP)"
-.PHONY: host-fancy-stage host-fancy-check host-fancy-benchmark host-fancy-demo host-fancy-comet host-fancy-install host-fancy-uninstall host-fancy-trial-install host-fancy-enroll host-fancy-once host-fancy-remove
+.PHONY: host-fancy-stage host-fancy-rebuild host-fancy-check host-fancy-benchmark host-fancy-demo host-fancy-comet host-fancy-install host-fancy-uninstall host-fancy-trial-install host-fancy-enroll host-fancy-once host-fancy-remove
 host-fancy-stage: host-python
 	$(PYTHON) tools/host_fancy.py --output "$(HOST_FANCY_STAGE)" --pesign "$(HOST_FANCY_PESIGN)" --module-source "$(HOST_FANCY_MODULE_SOURCE)"
+host-fancy-rebuild: host-python
+	$(PYTHON) tools/host_fancy_rebuild.py $(if $(HOST_FANCY_REBUILD),--output "$(HOST_FANCY_REBUILD)") --pesign "$(HOST_FANCY_PESIGN)" --module-source "$(HOST_FANCY_MODULE_SOURCE)"
 host-fancy-check: host-python
 	$(PYTHON) tools/host_fancy_vm.py --stage "$(HOST_FANCY_STAGE)" --output "$(HOST_FANCY_EVIDENCE)"
 host-fancy-benchmark: host-python

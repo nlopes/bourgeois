@@ -195,7 +195,7 @@ class PersistentInstallTests(unittest.TestCase):
 
     def test_rejects_menu_changed_during_compilation(self):
         (self.root / installer.CONFIGS[0]).write_text('changed')
-        with self.assertRaisesRegex(ValueError, 'menu changed'):
+        with self.assertRaisesRegex(ValueError, 'make host-fancy-install'):
             self.install()
         self.assertEqual(self.commands, [])
 

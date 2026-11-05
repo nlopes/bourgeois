@@ -5,6 +5,7 @@ This command writes only build artifacts. It never enrolls trust or changes EFI.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -38,6 +39,24 @@ def run(*args, **kwargs):
 def digest(file):
     with Path(file).open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def prepare_build_tools():
+    """Reuse tools extracted during host preparation when packages are absent."""
+    private = ROOT / 'build/host-fancy-tools/root'
+    if (private / 'usr/bin').is_dir():
+        os.environ['PATH'] += os.pathsep + str(private / 'usr/bin')
+        bison = shutil.which('bison')
+        if bison and Path(bison).is_relative_to(private):
+            os.environ['BISON_PKGDATADIR'] = str(private / 'usr/share/bison')
+
+
+def snapshot_menus(directory):
+    """Read protected host menus without running the builder as root."""
+    directory.mkdir(mode=0o700)
+    for name in ('grub.cfg', 'clean-menu.cfg'):
+        with (directory / name).open('wb') as stream:
+            subprocess.run(['sudo', 'cat', '/boot/grub/' + name], stdout=stream, check=True)
 
 
 def bootstrap(uuid, persistent=False):

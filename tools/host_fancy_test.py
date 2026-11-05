@@ -133,7 +133,7 @@ class TrialTests(unittest.TestCase):
 
     def test_install_rejects_stale_snapshot_before_writes(self):
         (self.root / 'boot/grub/grub.cfg').write_text('new kernel')
-        with self.assertRaisesRegex(ValueError, 'menu changed'):
+        with self.assertRaisesRegex(ValueError, 'make host-fancy-rebuild'):
             install(self.stage, self.root, self.run_command)
         self.assertFalse((self.root / EFI).exists())
         self.assertEqual(self.commands, [])

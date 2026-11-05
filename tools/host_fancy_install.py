@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 
-from host_fancy import ROOT, stage
+from host_fancy import ROOT, prepare_build_tools, snapshot_menus, stage
 from host_fancy_config import LIVE_CONFIG, configuration
 from host_fancy_trial import (EFI, FILES, LABEL as TRIAL_LABEL, MOK, STATE as TRIAL_STATE,
                               boot_state, check_host_image, current_config, verify_files)
@@ -277,23 +277,14 @@ def uninstall(root=Path('/'), run=None):
 def build_and_install(args):
     if os.geteuid() == 0:
         raise ValueError('Run make host-fancy-install as your regular user; compilation does not need root')
-    # Reuse the tools extracted during host preparation when packages are absent.
-    private = ROOT / 'build/host-fancy-tools/root'
-    if (private / 'usr/bin').is_dir():
-        os.environ['PATH'] += os.pathsep + str(private / 'usr/bin')
-        bison = shutil.which('bison')
-        if bison and Path(bison).is_relative_to(private):
-            os.environ['BISON_PKGDATADIR'] = str(private / 'usr/share/bison')
+    prepare_build_tools()
     # Authenticate before spending time compiling, and keep snapshots private.
     subprocess.run(['sudo', '-v'], check=True)
     directory = ROOT / 'build'
     directory.mkdir(exist_ok=True)
     workspace = Path(tempfile.mkdtemp(prefix='fancy-install-', dir=directory))
     snapshot_directory = workspace / 'snapshot'
-    snapshot_directory.mkdir(mode=0o700)
-    for name in ('grub.cfg', 'clean-menu.cfg'):
-        with (snapshot_directory / name).open('wb') as stream:
-            subprocess.run(['sudo', 'cat', '/boot/grub/' + name], stdout=stream, check=True)
+    snapshot_menus(snapshot_directory)
     stage(args.source, args.build or workspace / 'native', snapshot_directory, workspace / 'stage', args.pesign,
           args.module_source, persistent=True)
     subprocess.run(['sudo', sys.executable, str(Path(__file__).resolve()), 'deploy',

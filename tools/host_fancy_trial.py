@@ -42,7 +42,8 @@ def verify_files(directory, manifest):
 def current_config(root, manifest):
     for name, expected in manifest['snapshots'].items():
         if digest(root / 'boot/grub' / name) != expected:
-            raise ValueError('Host menu changed since staging. Take fresh snapshots and rebuild.')
+            command = 'host-fancy-install' if manifest.get('mode') == 'persistent' else 'host-fancy-rebuild'
+            raise ValueError(f'Host menu changed since staging. Run make {command} again.')
 
 
 def withdrawn_images():

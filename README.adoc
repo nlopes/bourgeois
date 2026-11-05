@@ -200,7 +200,9 @@ The firmware mode remains `2560x1440,auto`.
 Use `make host-fancy-uninstall` to return to Ubuntu/Slim as the default.
 
 `make host-fancy-stage` builds without host boot changes; `make host-fancy-check` tests the staged image in Secure Boot QEMU.
-For a one-time trial, use `make host-fancy-trial-install`, `make host-fancy-enroll`, and `make host-fancy-once` instead.
+For an embedded-menu trial after a kernel or menu update, run `make host-fancy-rebuild` to take fresh snapshots, rebuild, and run the Secure Boot and input checks together.
+Each run preserves its image and evidence in a new private `build/fancy-rebuild-*/` directory and prints the staged installation command after validation passes.
+Install a reviewed one-time trial with the printed stage path, then use `make host-fancy-enroll` and `make host-fancy-once`.
 Both earlier performance previews were withdrawn after physical black-screen reports; the host guide covers restoring a reviewed stage.
 The subsequent isolated cadence and controller trials worked physically and are now the default Fancy source and stage.
 See xref:docs/research/host-fancy.adoc[the host installation guide] for prerequisites, validation, trial commands, and removal.

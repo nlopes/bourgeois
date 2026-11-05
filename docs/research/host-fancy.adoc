@@ -49,6 +49,35 @@ make host-fancy-uninstall
 Removal preserves the backups and image hash enrollment.
 Ubuntu's original EFI entry and files remain available for recovery through the firmware boot menu throughout installation.
 
+== Rebuild an embedded-menu trial
+
+After a kernel update or any boot-entry change, rebuild and validate a one-time trial with:
+
+[source,shell]
+----
+make host-fancy-rebuild
+----
+
+Run it as your regular user with the build and Secure Boot VM prerequisites listed below, including matching Ubuntu source.
+The command authenticates with sudo only to read the protected menus.
+It takes fresh snapshots, compiles the current Fancy source and artwork, and runs the Secure Boot VM checks and the original-timing input benchmark.
+These check trusted-image acceptance, untrusted and altered-image rejection, rendering, Esc, repeated-arrow facing, L/W routing, Space at a gate, timer cancellation, and the full untouched countdown.
+The VM uses routing fixtures; it does not boot the physical operating systems.
+The command rereads both host menus after validation and rejects a build if either changed while the checks ran.
+Trial installation and one-time selection also retain their existing stale-menu checks.
+
+Each run uses a new private `build/fancy-rebuild-*/` workspace containing `snapshot/`, `native/`, `stage/`, `evidence/`, and the final `current/` snapshots.
+Reviewed images and previous evidence remain available.
+Failed builds retain their workspace for diagnosis and do not print an installation command.
+Set `HOST_FANCY_REBUILD` to a new directory to choose the workspace, or `HOST_FANCY_MODULE_SOURCE` to select isolated module source.
+The rebuild shares the permanent installer's extracted-tool support.
+
+Inspect the captures and logs under the printed `evidence/` path.
+After review, use the printed `make host-fancy-trial-install HOST_FANCY_STAGE=...` command, then follow the enrollment and one-time selection steps below.
+Remove an existing separate trial with `make host-fancy-remove` before installing its replacement.
+Rebuilding leaves the installed image, enrollment, BootOrder, and BootNext unchanged.
+The permanent installation reads its regenerated disk menu and does not need this snapshot rebuild after a kernel update.
+
 == Trust and recovery
 
 Fancy uses its own `/EFI/bourgeois-fancy/` directory and a separate firmware entry.
@@ -72,6 +101,7 @@ Native entry headers, commands, IDs, authentication, environment loading, and re
 Only the recognized scene hook and presentation font references are adapted.
 Fonts and assets are embedded inside the verified image because external font loading can be restricted under Secure Boot.
 The one-time trial's embedded menu is a snapshot: kernel or menu changes require rebuilding and validating that image before another trial.
+Use `make host-fancy-rebuild` for that sequence.
 Permanent installation uses the regenerated menu instead.
 
 References: https://wiki.ubuntu.com/UEFI/SecureBoot[Ubuntu Secure Boot], https://github.com/lcp/mokutil/blob/master/man/mokutil.1[mokutil hash enrollment], https://github.com/rhboot/shim/blob/15.8/verify.c[shim verification], and https://github.com/rhboot/efibootmgr/blob/main/README.md[efibootmgr].
@@ -88,8 +118,8 @@ Host installation also needs `sudo`, `mokutil`, `efibootmgr`, `findmnt`, and `ls
 Permanent installation uses the existing `update-grub` command as well.
 Do not upgrade GRUB to satisfy these prerequisites; source and EFI module versions must match.
 
-Permanent installation takes its own snapshots.
-For manual staging and optional one-time trials, create private read-only snapshots using interactive sudo authentication:
+Permanent installation and `make host-fancy-rebuild` take their own snapshots.
+For manual staging, create private read-only snapshots using interactive sudo authentication:
 
 [source,shell]
 ----
@@ -126,6 +156,7 @@ General preview installation through `make fancy` remains confined to the dispos
 
 `make test` checks menu preservation, the controller, layout, and trial management using temporary roots and simulated firmware commands.
 It also checks persistent installation, in-place updates, kernel menu refresh, and failure recovery without writing host firmware.
+Rebuild regressions check fresh kernel commands, preserved artifacts, failed builds and validation, and menus or images changing during validation.
 Run just the host Fancy regressions with:
 
 [source,shell]
